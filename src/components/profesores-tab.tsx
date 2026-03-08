@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -29,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { Plus, Pencil, Trash2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -37,9 +39,14 @@ interface Profesor {
   nombre: string
   apellidos: string
   ci: string
-  asignaturaId: number | null
   telefono: string | null
   email: string | null
+  genero: string | null
+  nombreIglesia: string | null
+  nombrePastor: string | null
+  tomaHuellaBiometrica: boolean
+  entregaFoto: boolean
+  asignaturaId: number | null
   asignatura?: { id: number; nombre: string } | null
 }
 
@@ -53,9 +60,14 @@ const initialFormData = {
   nombre: '',
   apellidos: '',
   ci: '',
-  asignaturaId: '',
   telefono: '',
   email: '',
+  genero: '',
+  nombreIglesia: '',
+  nombrePastor: '',
+  tomaHuellaBiometrica: false,
+  entregaFoto: false,
+  asignaturaId: '',
 }
 
 export function ProfesoresTab() {
@@ -127,9 +139,14 @@ export function ProfesoresTab() {
       nombre: profesor.nombre,
       apellidos: profesor.apellidos,
       ci: profesor.ci,
-      asignaturaId: profesor.asignaturaId?.toString() || '',
       telefono: profesor.telefono || '',
       email: profesor.email || '',
+      genero: profesor.genero || '',
+      nombreIglesia: profesor.nombreIglesia || '',
+      nombrePastor: profesor.nombrePastor || '',
+      tomaHuellaBiometrica: profesor.tomaHuellaBiometrica,
+      entregaFoto: profesor.entregaFoto,
+      asignaturaId: profesor.asignaturaId?.toString() || '',
     })
     setEditingId(profesor.id)
     setIsDialogOpen(true)
@@ -170,7 +187,7 @@ export function ProfesoresTab() {
                 Nuevo Profesor
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingId ? 'Editar Profesor' : 'Nuevo Profesor'}</DialogTitle>
                 <DialogDescription>
@@ -207,17 +224,14 @@ export function ProfesoresTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="asignaturaId">Asignatura que Imparte</Label>
-                    <Select value={formData.asignaturaId} onValueChange={(value) => setFormData({ ...formData, asignaturaId: value })}>
+                    <Label htmlFor="genero">Sexo</Label>
+                    <Select value={formData.genero} onValueChange={(value) => setFormData({ ...formData, genero: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar asignatura" />
+                        <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent>
-                        {asignaturas.map((asig) => (
-                          <SelectItem key={asig.id} value={asig.id.toString()}>
-                            {asig.nombre}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="M">Masculino</SelectItem>
+                        <SelectItem value="F">Femenino</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -237,6 +251,60 @@ export function ProfesoresTab() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="nombreIglesia">Nombre de la Iglesia y Dirección</Label>
+                    <Textarea
+                      id="nombreIglesia"
+                      value={formData.nombreIglesia}
+                      onChange={(e) => setFormData({ ...formData, nombreIglesia: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nombrePastor">Nombre del Pastor</Label>
+                    <Input
+                      id="nombrePastor"
+                      value={formData.nombrePastor}
+                      onChange={(e) => setFormData({ ...formData, nombrePastor: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="asignaturaId">Asignatura que Imparte</Label>
+                    <Select value={formData.asignaturaId} onValueChange={(value) => setFormData({ ...formData, asignaturaId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar asignatura" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {asignaturas.map((asig) => (
+                          <SelectItem key={asig.id} value={asig.id.toString()}>
+                            {asig.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Checkboxes */}
+                  <div className="space-y-4 col-span-2 border-t pt-4">
+                    <h4 className="font-medium text-sm">Documentación</h4>
+                    <div className="flex flex-wrap gap-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="tomaHuellaBiometrica"
+                          checked={formData.tomaHuellaBiometrica}
+                          onCheckedChange={(checked) => setFormData({ ...formData, tomaHuellaBiometrica: checked as boolean })}
+                        />
+                        <Label htmlFor="tomaHuellaBiometrica" className="font-normal">Toma de Huella Biométrica</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="entregaFoto"
+                          checked={formData.entregaFoto}
+                          onCheckedChange={(checked) => setFormData({ ...formData, entregaFoto: checked as boolean })}
+                        />
+                        <Label htmlFor="entregaFoto" className="font-normal">Entrega de Foto</Label>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
@@ -272,9 +340,9 @@ export function ProfesoresTab() {
                 <TableHead className="w-12">No.</TableHead>
                 <TableHead>Nombre Completo</TableHead>
                 <TableHead>CI</TableHead>
+                <TableHead>Sexo</TableHead>
                 <TableHead>Asignatura</TableHead>
                 <TableHead>Teléfono</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead className="w-24">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -291,9 +359,9 @@ export function ProfesoresTab() {
                     <TableCell>{profesor.id}</TableCell>
                     <TableCell>{profesor.nombre} {profesor.apellidos}</TableCell>
                     <TableCell>{profesor.ci}</TableCell>
+                    <TableCell>{profesor.genero === 'M' ? 'Masculino' : profesor.genero === 'F' ? 'Femenino' : '-'}</TableCell>
                     <TableCell>{profesor.asignatura?.nombre || '-'}</TableCell>
                     <TableCell>{profesor.telefono || '-'}</TableCell>
-                    <TableCell>{profesor.email || '-'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(profesor)}>

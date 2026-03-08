@@ -25,6 +25,7 @@ import { toast } from 'sonner'
 
 interface Alumno {
   id: number
+  numeroExpediente: number
   nombre: string
   apellidos: string
   ci: string
@@ -73,10 +74,10 @@ export function NotasTab() {
   }
 
   useEffect(() => {
-    if (selectedAlumno) {
+    if (selectedAlumno && asignaturas.length > 0) {
       loadNotas(selectedAlumno)
     }
-  }, [selectedAlumno])
+  }, [selectedAlumno, asignaturas])
 
   const loadNotas = async (alumnoId: string) => {
     try {
@@ -156,7 +157,7 @@ export function NotasTab() {
   }
 
   const filteredAlumnos = alumnos.filter(alumno =>
-    `${alumno.nombre} ${alumno.apellidos} ${alumno.ci}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${alumno.nombre} ${alumno.apellidos} ${alumno.ci} ${alumno.numeroExpediente}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const selectedAlumnoData = alumnos.find(a => a.id.toString() === selectedAlumno)
@@ -181,7 +182,7 @@ export function NotasTab() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Nombre o CI..."
+                    placeholder="Nombre, CI o expediente..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -202,7 +203,9 @@ export function NotasTab() {
                       }`}
                     >
                       <div className="font-medium">{alumno.nombre} {alumno.apellidos}</div>
-                      <div className="text-sm text-gray-500">CI: {alumno.ci}</div>
+                      <div className="text-sm text-gray-500">
+                        Exp. {alumno.numeroExpediente} | CI: {alumno.ci}
+                      </div>
                     </div>
                   ))
                 )}
@@ -218,7 +221,9 @@ export function NotasTab() {
                   <h3 className="font-semibold text-lg">
                     {selectedAlumnoData?.nombre} {selectedAlumnoData?.apellidos}
                   </h3>
-                  <p className="text-sm text-gray-600">CI: {selectedAlumnoData?.ci}</p>
+                  <p className="text-sm text-gray-600">
+                    Exp. {selectedAlumnoData?.numeroExpediente} | CI: {selectedAlumnoData?.ci}
+                  </p>
                 </div>
 
                 <div className="rounded-md border">

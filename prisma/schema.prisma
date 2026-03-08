@@ -10,28 +10,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Tabla de Alumnos - Información personal completa
+// Tabla de Alumnos - Información personal completa (según Excel)
 model Alumno {
   id                                  Int      @id @default(autoincrement())
+  numeroExpediente                    Int      @unique  // No Expediente
   nombre                              String
   apellidos                           String
-  ci                                  String   // Carnet de Identidad
-  fechaNacimiento                     DateTime?
-  genero                              String?  // Masculino/Femenino
-  direccion                           String?
-  pasaporte                           String?
+  ci                                  String   @unique  // Carnet de Identidad
   telefono                            String?
-  movil                               String?
   email                               String?
-  estadoCivil                         String?
-  nombreIglesia                       String?
-  nombrePastores                      String?
-  cartaRecomendacion                  Boolean  @default(false)
-  pagoMatricula                       String?
-  disposicionCampoMisionero           Boolean  @default(false)
-  redesSociales                       String?
-  tomaInformacionBiometrica           Boolean  @default(false)
-  numeroExpediente                    Int?
+  pasaporte                           String?  // No Pasaporte
+  direccion                           String?  // Dirección particular
+  genero                              String?  // Sexo: M/F
+  nombreIglesia                       String?  // Nombre de la Iglesia y Dirección
+  nombrePastor                        String?  // Nombre del Pastor
+  tomaHuellaBiometrica                Boolean  @default(false)  // Toma de huella biométricas
+  entregaFoto                         Boolean  @default(false)  // Entrega de foto
+  pagoCuotas                          String?  // Pago de Cuotas por meses
+  disposicionCampoMisionero           Boolean  @default(false)  // Desea participar del campo misionero
+  habilidades                         String?  // Habilidades
   createdAt                           DateTime @default(now())
   updatedAt                           DateTime @updatedAt
 
@@ -41,20 +38,25 @@ model Alumno {
   @@map("alumnos")
 }
 
-// Tabla de Profesores
+// Tabla de Profesores (según Excel)
 model Profesor {
-  id                Int      @id @default(autoincrement())
-  nombre            String
-  apellidos         String
-  ci                String   // Carnet de Identidad
-  asignaturaId      Int?
-  telefono          String?
-  email             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                       Int      @id @default(autoincrement())
+  nombre                   String
+  apellidos                String
+  ci                       String   // Carnet de Identidad
+  telefono                 String?
+  email                    String?
+  genero                   String?  // Sexo: M/F
+  nombreIglesia            String?  // Nombre de la Iglesia y Dirección
+  nombrePastor             String?  // Nombre del Pastor
+  tomaHuellaBiometrica     Boolean  @default(false)  // Toma de huella biométricas
+  entregaFoto              Boolean  @default(false)  // Entrega de foto
+  asignaturaId             Int?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   // Relaciones
-  asignatura        Asignatura? @relation(fields: [asignaturaId], references: [id])
+  asignatura               Asignatura? @relation(fields: [asignaturaId], references: [id])
 
   @@map("profesores")
 }
@@ -72,13 +74,12 @@ model Asignatura {
   @@map("asignaturas")
 }
 
-// Tabla de Notas
+// Tabla de Notas (según Excel)
 model Nota {
   id                Int      @id @default(autoincrement())
   alumnoId          Int
   asignaturaId      Int
   nota              Float?   // Nota numérica
-  observaciones     String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

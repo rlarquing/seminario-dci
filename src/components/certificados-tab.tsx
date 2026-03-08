@@ -17,16 +17,17 @@ import { toast } from 'sonner'
 
 interface Alumno {
   id: number
+  numeroExpediente: number
   nombre: string
   apellidos: string
   ci: string
-  fechaNacimiento: string | null
   genero: string | null
   direccion: string | null
   nombreIglesia: string | null
-  nombrePastores: string | null
-  cartaRecomendacion: boolean
-  pagoMatricula: string | null
+  nombrePastor: string | null
+  tomaHuellaBiometrica: boolean
+  entregaFoto: boolean
+  pagoCuotas: string | null
   notas: {
     id: number
     nota: number | null
@@ -79,15 +80,6 @@ export function CertificadosTab() {
     } catch (error) {
       toast.error('Error al cargar el certificado')
     }
-  }
-
-  const formatDate = (date: string | null) => {
-    if (!date) return '-'
-    return new Date(date).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    })
   }
 
   const getCurrentDate = () => {
@@ -145,13 +137,13 @@ export function CertificadosTab() {
       doc.text('DATOS DEL ALUMNO', 15, 55)
       
       const studentData = [
+        ['No. Expediente:', alumno.numeroExpediente.toString()],
         ['Nombre Completo:', `${alumno.nombre} ${alumno.apellidos}`],
         ['Carnet de Identidad:', alumno.ci],
-        ['Fecha de Nacimiento:', formatDate(alumno.fechaNacimiento)],
-        ['Género:', alumno.genero || '-'],
+        ['Sexo:', alumno.genero === 'M' ? 'Masculino' : alumno.genero === 'F' ? 'Femenino' : '-'],
         ['Dirección:', alumno.direccion || '-'],
         ['Iglesia:', alumno.nombreIglesia || '-'],
-        ['Pastores:', alumno.nombrePastores || '-'],
+        ['Pastor:', alumno.nombrePastor || '-'],
       ]
       
       autoTable(doc, {
@@ -219,7 +211,7 @@ export function CertificadosTab() {
   }
 
   const filteredAlumnos = alumnos.filter(alumno =>
-    `${alumno.nombre} ${alumno.apellidos} ${alumno.ci}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${alumno.nombre} ${alumno.apellidos} ${alumno.ci} ${alumno.numeroExpediente}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (loading) {
@@ -241,7 +233,7 @@ export function CertificadosTab() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Nombre o CI..."
+                  placeholder="Nombre, CI o expediente..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -257,7 +249,7 @@ export function CertificadosTab() {
                 <SelectContent>
                   {filteredAlumnos.map(alumno => (
                     <SelectItem key={alumno.id} value={alumno.id.toString()}>
-                      {alumno.nombre} {alumno.apellidos} - CI: {alumno.ci}
+                      Exp. {alumno.numeroExpediente} - {alumno.nombre} {alumno.apellidos}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -308,6 +300,10 @@ export function CertificadosTab() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                   <div className="flex">
+                    <span className="font-semibold w-40">No. Expediente:</span>
+                    <span>{certificadoData.alumno.numeroExpediente}</span>
+                  </div>
+                  <div className="flex">
                     <span className="font-semibold w-40">Nombre Completo:</span>
                     <span>{certificadoData.alumno.nombre} {certificadoData.alumno.apellidos}</span>
                   </div>
@@ -316,12 +312,8 @@ export function CertificadosTab() {
                     <span>{certificadoData.alumno.ci}</span>
                   </div>
                   <div className="flex">
-                    <span className="font-semibold w-40">Fecha de Nacimiento:</span>
-                    <span>{formatDate(certificadoData.alumno.fechaNacimiento)}</span>
-                  </div>
-                  <div className="flex">
-                    <span className="font-semibold w-40">Género:</span>
-                    <span>{certificadoData.alumno.genero || '-'}</span>
+                    <span className="font-semibold w-40">Sexo:</span>
+                    <span>{certificadoData.alumno.genero === 'M' ? 'Masculino' : certificadoData.alumno.genero === 'F' ? 'Femenino' : '-'}</span>
                   </div>
                   <div className="flex md:col-span-2">
                     <span className="font-semibold w-40">Dirección:</span>
@@ -332,8 +324,8 @@ export function CertificadosTab() {
                     <span>{certificadoData.alumno.nombreIglesia || '-'}</span>
                   </div>
                   <div className="flex">
-                    <span className="font-semibold w-40">Pastores:</span>
-                    <span>{certificadoData.alumno.nombrePastores || '-'}</span>
+                    <span className="font-semibold w-40">Pastor:</span>
+                    <span>{certificadoData.alumno.nombrePastor || '-'}</span>
                   </div>
                 </div>
               </div>

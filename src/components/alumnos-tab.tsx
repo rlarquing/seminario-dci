@@ -31,52 +31,46 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Pencil, Trash2, Search, UserPlus } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Alumno {
   id: number
+  numeroExpediente: number
   nombre: string
   apellidos: string
   ci: string
-  fechaNacimiento: string | null
-  genero: string | null
-  direccion: string | null
-  pasaporte: string | null
   telefono: string | null
-  movil: string | null
   email: string | null
-  estadoCivil: string | null
+  pasaporte: string | null
+  direccion: string | null
+  genero: string | null
   nombreIglesia: string | null
-  nombrePastores: string | null
-  cartaRecomendacion: boolean
-  pagoMatricula: string | null
+  nombrePastor: string | null
+  tomaHuellaBiometrica: boolean
+  entregaFoto: boolean
+  pagoCuotas: string | null
   disposicionCampoMisionero: boolean
-  redesSociales: string | null
-  tomaInformacionBiometrica: boolean
-  numeroExpediente: number | null
+  habilidades: string | null
 }
 
 const initialFormData = {
+  numeroExpediente: '',
   nombre: '',
   apellidos: '',
   ci: '',
-  fechaNacimiento: '',
-  genero: '',
-  direccion: '',
-  pasaporte: '',
   telefono: '',
-  movil: '',
   email: '',
-  estadoCivil: '',
+  pasaporte: '',
+  direccion: '',
+  genero: '',
   nombreIglesia: '',
-  nombrePastores: '',
-  cartaRecomendacion: false,
-  pagoMatricula: '',
+  nombrePastor: '',
+  tomaHuellaBiometrica: false,
+  entregaFoto: false,
+  pagoCuotas: '',
   disposicionCampoMisionero: false,
-  redesSociales: '',
-  tomaInformacionBiometrica: false,
-  numeroExpediente: '',
+  habilidades: '',
 }
 
 export function AlumnosTab() {
@@ -109,7 +103,7 @@ export function AlumnosTab() {
     try {
       const payload = {
         ...formData,
-        numeroExpediente: formData.numeroExpediente ? parseInt(formData.numeroExpediente) : null,
+        numeroExpediente: parseInt(formData.numeroExpediente),
       }
 
       if (editingId) {
@@ -139,25 +133,22 @@ export function AlumnosTab() {
 
   const handleEdit = (alumno: Alumno) => {
     setFormData({
+      numeroExpediente: alumno.numeroExpediente.toString(),
       nombre: alumno.nombre,
       apellidos: alumno.apellidos,
       ci: alumno.ci,
-      fechaNacimiento: alumno.fechaNacimiento ? alumno.fechaNacimiento.split('T')[0] : '',
-      genero: alumno.genero || '',
-      direccion: alumno.direccion || '',
-      pasaporte: alumno.pasaporte || '',
       telefono: alumno.telefono || '',
-      movil: alumno.movil || '',
       email: alumno.email || '',
-      estadoCivil: alumno.estadoCivil || '',
+      pasaporte: alumno.pasaporte || '',
+      direccion: alumno.direccion || '',
+      genero: alumno.genero || '',
       nombreIglesia: alumno.nombreIglesia || '',
-      nombrePastores: alumno.nombrePastores || '',
-      cartaRecomendacion: alumno.cartaRecomendacion,
-      pagoMatricula: alumno.pagoMatricula || '',
+      nombrePastor: alumno.nombrePastor || '',
+      tomaHuellaBiometrica: alumno.tomaHuellaBiometrica,
+      entregaFoto: alumno.entregaFoto,
+      pagoCuotas: alumno.pagoCuotas || '',
       disposicionCampoMisionero: alumno.disposicionCampoMisionero,
-      redesSociales: alumno.redesSociales || '',
-      tomaInformacionBiometrica: alumno.tomaInformacionBiometrica,
-      numeroExpediente: alumno.numeroExpediente?.toString() || '',
+      habilidades: alumno.habilidades || '',
     })
     setEditingId(alumno.id)
     setIsDialogOpen(true)
@@ -176,7 +167,7 @@ export function AlumnosTab() {
   }
 
   const filteredAlumnos = alumnos.filter(alumno =>
-    `${alumno.nombre} ${alumno.apellidos} ${alumno.ci}`.toLowerCase().includes(searchTerm.toLowerCase())
+    `${alumno.nombre} ${alumno.apellidos} ${alumno.ci} ${alumno.numeroExpediente}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (loading) {
@@ -208,6 +199,25 @@ export function AlumnosTab() {
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
                   <div className="space-y-2">
+                    <Label htmlFor="numeroExpediente">No. Expediente *</Label>
+                    <Input
+                      id="numeroExpediente"
+                      type="number"
+                      value={formData.numeroExpediente}
+                      onChange={(e) => setFormData({ ...formData, numeroExpediente: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ci">Carnet de Identidad *</Label>
+                    <Input
+                      id="ci"
+                      value={formData.ci}
+                      onChange={(e) => setFormData({ ...formData, ci: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="nombre">Nombre *</Label>
                     <Input
                       id="nombre"
@@ -226,79 +236,23 @@ export function AlumnosTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="ci">Carnet de Identidad *</Label>
-                    <Input
-                      id="ci"
-                      value={formData.ci}
-                      onChange={(e) => setFormData({ ...formData, ci: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
-                    <Input
-                      id="fechaNacimiento"
-                      type="date"
-                      value={formData.fechaNacimiento}
-                      onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="genero">Género</Label>
+                    <Label htmlFor="genero">Sexo</Label>
                     <Select value={formData.genero} onValueChange={(value) => setFormData({ ...formData, genero: value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Masculino">Masculino</SelectItem>
-                        <SelectItem value="Femenino">Femenino</SelectItem>
+                        <SelectItem value="M">Masculino</SelectItem>
+                        <SelectItem value="F">Femenino</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="estadoCivil">Estado Civil</Label>
-                    <Select value={formData.estadoCivil} onValueChange={(value) => setFormData({ ...formData, estadoCivil: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Soltero">Soltero(a)</SelectItem>
-                        <SelectItem value="Casado">Casado(a)</SelectItem>
-                        <SelectItem value="Viudo">Viudo(a)</SelectItem>
-                        <SelectItem value="Divorciado">Divorciado(a)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="direccion">Dirección</Label>
-                    <Textarea
-                      id="direccion"
-                      value={formData.direccion}
-                      onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pasaporte">Pasaporte</Label>
-                    <Input
-                      id="pasaporte"
-                      value={formData.pasaporte}
-                      onChange={(e) => setFormData({ ...formData, pasaporte: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="telefono">Teléfono Fijo</Label>
+                    <Label htmlFor="telefono">Teléfono</Label>
                     <Input
                       id="telefono"
                       value={formData.telefono}
                       onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="movil">Móvil</Label>
-                    <Input
-                      id="movil"
-                      value={formData.movil}
-                      onChange={(e) => setFormData({ ...formData, movil: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -311,49 +265,53 @@ export function AlumnosTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nombreIglesia">Nombre de la Iglesia</Label>
+                    <Label htmlFor="pasaporte">No. Pasaporte</Label>
                     <Input
+                      id="pasaporte"
+                      value={formData.pasaporte}
+                      onChange={(e) => setFormData({ ...formData, pasaporte: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="direccion">Dirección Particular</Label>
+                    <Textarea
+                      id="direccion"
+                      value={formData.direccion}
+                      onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="nombreIglesia">Nombre de la Iglesia y Dirección</Label>
+                    <Textarea
                       id="nombreIglesia"
                       value={formData.nombreIglesia}
                       onChange={(e) => setFormData({ ...formData, nombreIglesia: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nombrePastores">Nombre de los Pastores</Label>
+                    <Label htmlFor="nombrePastor">Nombre del Pastor</Label>
                     <Input
-                      id="nombrePastores"
-                      value={formData.nombrePastores}
-                      onChange={(e) => setFormData({ ...formData, nombrePastores: e.target.value })}
+                      id="nombrePastor"
+                      value={formData.nombrePastor}
+                      onChange={(e) => setFormData({ ...formData, nombrePastor: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="pagoMatricula">Pago de Matrícula</Label>
-                    <Select value={formData.pagoMatricula} onValueChange={(value) => setFormData({ ...formData, pagoMatricula: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pagado">Pagado</SelectItem>
-                        <SelectItem value="Pendiente">Pendiente</SelectItem>
-                        <SelectItem value="Parcial">Parcial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="redesSociales">Redes Sociales</Label>
+                    <Label htmlFor="pagoCuotas">Pago de Cuotas (meses)</Label>
                     <Input
-                      id="redesSociales"
-                      value={formData.redesSociales}
-                      onChange={(e) => setFormData({ ...formData, redesSociales: e.target.value })}
+                      id="pagoCuotas"
+                      value={formData.pagoCuotas}
+                      onChange={(e) => setFormData({ ...formData, pagoCuotas: e.target.value })}
+                      placeholder="Ej: 12, 6, Pendiente"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="numeroExpediente">Número de Expediente</Label>
-                    <Input
-                      id="numeroExpediente"
-                      type="number"
-                      value={formData.numeroExpediente}
-                      onChange={(e) => setFormData({ ...formData, numeroExpediente: e.target.value })}
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="habilidades">Habilidades</Label>
+                    <Textarea
+                      id="habilidades"
+                      value={formData.habilidades}
+                      onChange={(e) => setFormData({ ...formData, habilidades: e.target.value })}
+                      placeholder="Ej: Cocinero, maestro, electricista"
                     />
                   </div>
                   
@@ -363,11 +321,19 @@ export function AlumnosTab() {
                     <div className="flex flex-wrap gap-6">
                       <div className="flex items-center space-x-2">
                         <Checkbox
-                          id="cartaRecomendacion"
-                          checked={formData.cartaRecomendacion}
-                          onCheckedChange={(checked) => setFormData({ ...formData, cartaRecomendacion: checked as boolean })}
+                          id="tomaHuellaBiometrica"
+                          checked={formData.tomaHuellaBiometrica}
+                          onCheckedChange={(checked) => setFormData({ ...formData, tomaHuellaBiometrica: checked as boolean })}
                         />
-                        <Label htmlFor="cartaRecomendacion" className="font-normal">Carta de Recomendación</Label>
+                        <Label htmlFor="tomaHuellaBiometrica" className="font-normal">Toma de Huella Biométrica</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="entregaFoto"
+                          checked={formData.entregaFoto}
+                          onCheckedChange={(checked) => setFormData({ ...formData, entregaFoto: checked as boolean })}
+                        />
+                        <Label htmlFor="entregaFoto" className="font-normal">Entrega de Foto</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -375,15 +341,7 @@ export function AlumnosTab() {
                           checked={formData.disposicionCampoMisionero}
                           onCheckedChange={(checked) => setFormData({ ...formData, disposicionCampoMisionero: checked as boolean })}
                         />
-                        <Label htmlFor="disposicionCampoMisionero" className="font-normal">Disposición Campo Misionero</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="tomaInformacionBiometrica"
-                          checked={formData.tomaInformacionBiometrica}
-                          onCheckedChange={(checked) => setFormData({ ...formData, tomaInformacionBiometrica: checked as boolean })}
-                        />
-                        <Label htmlFor="tomaInformacionBiometrica" className="font-normal">Información Biométrica</Label>
+                        <Label htmlFor="disposicionCampoMisionero" className="font-normal">Campo Misionero</Label>
                       </div>
                     </div>
                   </div>
@@ -406,7 +364,7 @@ export function AlumnosTab() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Buscar por nombre o CI..."
+              placeholder="Buscar por nombre, CI o expediente..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -418,12 +376,12 @@ export function AlumnosTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">No.</TableHead>
+                <TableHead>No. Exp.</TableHead>
                 <TableHead>Nombre Completo</TableHead>
                 <TableHead>CI</TableHead>
-                <TableHead>Iglesia</TableHead>
                 <TableHead>Teléfono</TableHead>
-                <TableHead>Pago</TableHead>
+                <TableHead>Iglesia</TableHead>
+                <TableHead>Cuotas</TableHead>
                 <TableHead className="w-24">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -437,18 +395,17 @@ export function AlumnosTab() {
               ) : (
                 filteredAlumnos.map((alumno) => (
                   <TableRow key={alumno.id}>
-                    <TableCell>{alumno.id}</TableCell>
+                    <TableCell className="font-medium">{alumno.numeroExpediente}</TableCell>
                     <TableCell>{alumno.nombre} {alumno.apellidos}</TableCell>
                     <TableCell>{alumno.ci}</TableCell>
+                    <TableCell>{alumno.telefono || '-'}</TableCell>
                     <TableCell>{alumno.nombreIglesia || '-'}</TableCell>
-                    <TableCell>{alumno.movil || alumno.telefono || '-'}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        alumno.pagoMatricula === 'Pagado' ? 'bg-green-100 text-green-800' :
-                        alumno.pagoMatricula === 'Pendiente' ? 'bg-red-100 text-red-800' :
+                        alumno.pagoCuotas && !isNaN(parseInt(alumno.pagoCuotas)) ? 'bg-green-100 text-green-800' :
                         'bg-yellow-100 text-yellow-800'
                       }`}>
-                        {alumno.pagoMatricula || 'Sin definir'}
+                        {alumno.pagoCuotas ? `${alumno.pagoCuotas} mes(es)` : 'Sin definir'}
                       </span>
                     </TableCell>
                     <TableCell>

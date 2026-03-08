@@ -41,9 +41,14 @@ export async function PUT(
         nombre: data.nombre,
         apellidos: data.apellidos,
         ci: data.ci,
-        asignaturaId: data.asignaturaId || null,
         telefono: data.telefono || null,
         email: data.email || null,
+        genero: data.genero || null,
+        nombreIglesia: data.nombreIglesia || null,
+        nombrePastor: data.nombrePastor || null,
+        tomaHuellaBiometrica: data.tomaHuellaBiometrica || false,
+        entregaFoto: data.entregaFoto || false,
+        asignaturaId: data.asignaturaId || null,
       }
     })
     

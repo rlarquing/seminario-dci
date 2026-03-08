@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 export async function GET() {
   try {
     const alumnos = await db.alumno.findMany({
-      orderBy: { id: 'asc' },
+      orderBy: { numeroExpediente: 'asc' },
       include: {
         notas: {
           include: {
@@ -28,25 +28,22 @@ export async function POST(request: NextRequest) {
     
     const alumno = await db.alumno.create({
       data: {
+        numeroExpediente: parseInt(data.numeroExpediente),
         nombre: data.nombre,
         apellidos: data.apellidos,
         ci: data.ci,
-        fechaNacimiento: data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
-        genero: data.genero || null,
-        direccion: data.direccion || null,
-        pasaporte: data.pasaporte || null,
         telefono: data.telefono || null,
-        movil: data.movil || null,
         email: data.email || null,
-        estadoCivil: data.estadoCivil || null,
+        pasaporte: data.pasaporte || null,
+        direccion: data.direccion || null,
+        genero: data.genero || null,
         nombreIglesia: data.nombreIglesia || null,
-        nombrePastores: data.nombrePastores || null,
-        cartaRecomendacion: data.cartaRecomendacion || false,
-        pagoMatricula: data.pagoMatricula || null,
+        nombrePastor: data.nombrePastor || null,
+        tomaHuellaBiometrica: data.tomaHuellaBiometrica || false,
+        entregaFoto: data.entregaFoto || false,
+        pagoCuotas: data.pagoCuotas || null,
         disposicionCampoMisionero: data.disposicionCampoMisionero || false,
-        redesSociales: data.redesSociales || null,
-        tomaInformacionBiometrica: data.tomaInformacionBiometrica || false,
-        numeroExpediente: data.numeroExpediente || null,
+        habilidades: data.habilidades || null,
       }
     })
     
