@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Tabla de Alumnos - Información personal completa
+model Alumno {
+  id                                  Int      @id @default(autoincrement())
+  nombre                              String
+  apellidos                           String
+  ci                                  String   // Carnet de Identidad
+  fechaNacimiento                     DateTime?
+  genero                              String?  // Masculino/Femenino
+  direccion                           String?
+  pasaporte                           String?
+  telefono                            String?
+  movil                               String?
+  email                               String?
+  estadoCivil                         String?
+  nombreIglesia                       String?
+  nombrePastores                      String?
+  cartaRecomendacion                  Boolean  @default(false)
+  pagoMatricula                       String?
+  disposicionCampoMisionero           Boolean  @default(false)
+  redesSociales                       String?
+  tomaInformacionBiometrica           Boolean  @default(false)
+  numeroExpediente                    Int?
+  createdAt                           DateTime @default(now())
+  updatedAt                           DateTime @updatedAt
+
+  // Relaciones
+  notas                               Nota[]
+
+  @@map("alumnos")
+}
+
+// Tabla de Profesores
+model Profesor {
+  id                Int      @id @default(autoincrement())
+  nombre            String
+  apellidos         String
+  ci                String   // Carnet de Identidad
+  asignaturaId      Int?
+  telefono          String?
+  email             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  asignatura        Asignatura? @relation(fields: [asignaturaId], references: [id])
+
+  @@map("profesores")
+}
+
+// Tabla de Asignaturas
+model Asignatura {
+  id                Int      @id @default(autoincrement())
+  nombre            String
+  codigo            String?  @unique
+  profesores        Profesor[]
+  notas             Nota[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("asignaturas")
+}
+
+// Tabla de Notas
+model Nota {
+  id                Int      @id @default(autoincrement())
+  alumnoId          Int
+  asignaturaId      Int
+  nota              Float?   // Nota numérica
+  observaciones     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaciones
+  alumno            Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  asignatura        Asignatura @relation(fields: [asignaturaId], references: [id])
+
+  @@unique([alumnoId, asignaturaId]) // Un alumno solo puede tener una nota por asignatura
+  @@map("notas")
+}

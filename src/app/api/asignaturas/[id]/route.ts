@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+
+// GET - Obtener una asignatura por ID
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const asignatura = await db.asignatura.findUnique({
+      where: { id: parseInt(id) }
+    })
+    
+    if (!asignatura) {
+      return NextResponse.json({ error: 'Asignatura no encontrada' }, { status: 404 })
+    }
+    
+    return NextResponse.json(asignatura)
+  } catch (error) {
+    console.error('Error fetching asignatura:', error)
+    return NextResponse.json({ error: 'Error al obtener asignatura' }, { status: 500 })
+  }
+}
+
+// PUT - Actualizar asignatura
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const data = await request.json()
+    
+    const asignatura = await db.asignatura.update({
+      where: { id: parseInt(id) },
+      data: {
+        nombre: data.nombre,
+        codigo: data.codigo || null,
+      }
+    })
+    
+    return NextResponse.json(asignatura)
+  } catch (error) {
+    console.error('Error updating asignatura:', error)
+    return NextResponse.json({ error: 'Error al actualizar asignatura' }, { status: 500 })
+  }
+}
+
+// DELETE - Eliminar asignatura
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    await db.asignatura.delete({
+      where: { id: parseInt(id) }
+    })
+    
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting asignatura:', error)
+    return NextResponse.json({ error: 'Error al eliminar asignatura' }, { status: 500 })
+  }
+}
