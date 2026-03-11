@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// PARA DESPLEGAR EN VERCEL:
+// 1. Cambia provider a "postgresql"
+// 2. Agrega directUrl con tu conexión directa
+// 3. Configura DATABASE_URL en Vercel
+// ========================================
+
+// Tabla de Alumnos - Información personal (según Excel)
+model Alumno {
+  id                        Int      @id @default(autoincrement())
+  numeroExpediente          Int      @unique  // No Expediente
+  nombre                    String   // Nombre y Apellidos
+  ci                        String   @unique  // C- Identidad
+  telefono                  String?
+  email                     String?
+  pasaporte                 String?  // No Pasporte
+  direccion                 String?  // Dirección particular
+  genero                    String?  // Sexo (M/F)
+  nombreIglesia             String?  // Nombre de la Iglesia y Dirección
+  nombrePastor              String?  // Nombre del Pastor
+  tomaHuellaBiometrica      Boolean  @default(false)  // Toma de huella biométricas
+  entregaFoto               Boolean  @default(false)  // Entrega de foto
+  pagoCuotas                String?  // Pago de Cuotas por meses
+  disposicionCampoMisionero Boolean  @default(false)  // Campo misionero
+  habilidades               String?  // Habilidades
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  notas                     Nota[]
+
+  @@map("alumnos")
+}
+
+// Tabla de Profesores (según Excel)
+model Profesor {
+  id                    Int      @id @default(autoincrement())
+  nombre                String   // Nombre y Apellidos
+  ci                    String   // C- Identidad
+  telefono              String?
+  email                 String?
+  genero                String?  // Sexo (M/F)
+  nombreIglesia         String?  // Nombre de la Iglesia y Dirección
+  nombrePastor          String?  // Nombre del Pastor
+  tomaHuellaBiometrica  Boolean  @default(false)
+  entregaFoto           Boolean  @default(false)
+  asignaturaId          Int?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  asignatura            Asignatura? @relation(fields: [asignaturaId], references: [id])
+
+  @@map("profesores")
+}
+
+// Tabla de Asignaturas
+model Asignatura {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  codigo      String?  @unique
+  profesores  Profesor[]
+  notas       Nota[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("asignaturas")
+}
+
+// Tabla de Notas (según Excel)
+model Nota {
+  id           Int      @id @default(autoincrement())
+  alumnoId     Int
+  asignaturaId Int
+  nota         Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  alumno       Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  asignatura   Asignatura @relation(fields: [asignaturaId], references: [id])
+
+  @@unique([alumnoId, asignaturaId])
+  @@map("notas")
+}
