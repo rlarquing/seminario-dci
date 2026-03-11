@@ -54,8 +54,16 @@ export function CertificadosTab() {
     try {
       const response = await fetch('/api/alumnos')
       const data = await response.json()
-      setAlumnos(data)
+      if (response.ok && Array.isArray(data)) {
+        setAlumnos(data)
+      } else {
+        setAlumnos([])
+        if (data.error) {
+          toast.error(data.error)
+        }
+      }
     } catch {
+      setAlumnos([])
       toast.error('Error al cargar los alumnos')
     } finally {
       setLoading(false)

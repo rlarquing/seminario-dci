@@ -56,9 +56,19 @@ export function NotasTab() {
       ])
       const alumData = await alumRes.json()
       const asigData = await asigRes.json()
-      setAlumnos(alumData)
-      setAsignaturas(asigData)
+      
+      setAlumnos(alumRes.ok && Array.isArray(alumData) ? alumData : [])
+      setAsignaturas(asigRes.ok && Array.isArray(asigData) ? asigData : [])
+      
+      if (!alumRes.ok && alumData.error) {
+        toast.error(alumData.error)
+      }
+      if (!asigRes.ok && asigData.error) {
+        toast.error(asigData.error)
+      }
     } catch {
+      setAlumnos([])
+      setAsignaturas([])
       toast.error('Error al cargar los datos')
     } finally {
       setLoading(false)

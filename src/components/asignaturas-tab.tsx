@@ -52,8 +52,16 @@ export function AsignaturasTab() {
     try {
       const response = await fetch('/api/asignaturas')
       const data = await response.json()
-      setAsignaturas(data)
+      if (response.ok && Array.isArray(data)) {
+        setAsignaturas(data)
+      } else {
+        setAsignaturas([])
+        if (data.error) {
+          toast.error(data.error)
+        }
+      }
     } catch (error) {
+      setAsignaturas([])
       toast.error('Error al cargar las asignaturas')
     } finally {
       setLoading(false)

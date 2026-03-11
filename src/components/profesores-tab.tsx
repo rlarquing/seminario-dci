@@ -89,9 +89,19 @@ export function ProfesoresTab() {
       ])
       const profData = await profRes.json()
       const asigData = await asigRes.json()
-      setProfesores(profData)
-      setAsignaturas(asigData)
+      
+      setProfesores(profRes.ok && Array.isArray(profData) ? profData : [])
+      setAsignaturas(asigRes.ok && Array.isArray(asigData) ? asigData : [])
+      
+      if (!profRes.ok && profData.error) {
+        toast.error(profData.error)
+      }
+      if (!asigRes.ok && asigData.error) {
+        toast.error(asigData.error)
+      }
     } catch {
+      setProfesores([])
+      setAsignaturas([])
       toast.error('Error al cargar los datos')
     } finally {
       setLoading(false)
