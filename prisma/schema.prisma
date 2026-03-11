@@ -2,20 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "sqlite"
+  url       = env("DATABASE_URL")
 }
-
-// ========================================
-// PARA DESPLEGAR EN VERCEL:
-// 1. Cambia provider a "postgresql"
-// 2. Agrega directUrl con tu conexión directa
-// 3. Configura DATABASE_URL en Vercel
-// ========================================
 
 // Tabla de Alumnos - Información personal (según Excel)
 model Alumno {

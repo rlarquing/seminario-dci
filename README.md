@@ -59,133 +59,178 @@ bun run dev
 
 ---
 
-## ☁️ DESPLIEGUE EN VERCEL
+## ☁️ DESPLIEGUE EN VERCEL CON TURSO
 
-### ⚠️ IMPORTANTE: Vercel NO soporta SQLite
+### ¿Por qué Turso?
 
-Vercel es una plataforma **serverless**, lo que significa que no tiene un sistema de archivos persistente. **SQLite requiere un archivo físico**, por lo que NO funcionará en Vercel.
-
-### ✅ Solución: Usar PostgreSQL
-
-Sigue estos pasos para desplegar correctamente:
-
----
-
-### PASO 1: Crear base de datos PostgreSQL
-
-#### Opción A: Vercel Postgres (Más fácil)
-1. Ve a tu proyecto en [Vercel Dashboard](https://vercel.com/dashboard)
-2. Haz clic en **Storage** → **Create Database** → **Postgres**
-3. Elige una región cercana a tus usuarios
-4. Haz clic en **Create**
-5. Vercel creará automáticamente las variables de entorno
-
-#### Opción B: Neon (PostgreSQL gratuito)
-1. Ve a [neon.tech](https://neon.tech) y crea una cuenta
-2. Crea un nuevo proyecto
-3. Copia la **Connection string** (formato: `postgresql://...`)
-4. Guárdala para el siguiente paso
-
-#### Opción C: Supabase (PostgreSQL gratuito)
-1. Ve a [supabase.com](https://supabase.com) y crea una cuenta
-2. Crea un nuevo proyecto
-3. Ve a **Project Settings** → **Database**
-4. Copia la **Connection string** (formato: `postgresql://...`)
+**Vercel NO soporta SQLite local** porque es serverless. **Turso** es la mejor opción porque:
+- ✅ SQLite distribuido (compatible con tu schema actual)
+- ✅ Plan GRATIS generoso
+- ✅ Fácil configuración
+- ✅ Baja latencia global
 
 ---
 
-### PASO 2: Modificar el Schema
+### PASO 1: Crear cuenta en Turso
 
-Edita el archivo `prisma/schema.prisma`:
-
-```prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider  = "postgresql"  // Cambiar de "sqlite" a "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")  // Agregar esta línea
-}
-
-// ... resto del schema sin cambios
-```
+1. Ve a [turso.tech](https://turso.tech) y crea una cuenta GRATIS
+2. Haz clic en **"Create Database"**
+3. Ponle un nombre (ej: `seminario-dci`)
+4. Selecciona la región más cercana a Cuba
 
 ---
 
-### PASO 3: Configurar Variables de Entorno en Vercel
+### PASO 2: Obtener las credenciales
+
+1. En tu base de datos, ve a **"Settings"** → **"Database Authentication"**
+2. Haz clic en **"Create Token"**
+3. Copia el **Token** que aparece (solo se muestra una vez)
+
+4. También necesitas la **URL** de la base de datos, que se ve así:
+   ```
+   libsql://seminario-dci-[tu-usuario].turso.io
+   ```
+
+---
+
+### PASO 3: Configurar variables en Vercel
 
 Ve a tu proyecto en Vercel → **Settings** → **Environment Variables**
 
-Agrega estas variables:
+Agrega esta variable:
 
-| Variable | Valor |
-|----------|-------|
-| `DATABASE_URL` | Tu connection string de PostgreSQL (con `?pgbouncer=true` si usa pooler) |
-| `DIRECT_DATABASE_URL` | Tu connection string directo (sin pgbouncer) |
+| Nombre | Valor |
+|--------|-------|
+| `DATABASE_URL` | `libsql://TU-BASE-DEDATOS.turso.io?authToken=TU-TOKEN` |
 
-**Ejemplo para Neon:**
+**Ejemplo real:**
 ```
-DATABASE_URL=postgresql://usuario:password@ep-xxxxx.us-east-2.aws.neon.tech/neondb?sslmode=require&pgbouncer=true
-DIRECT_DATABASE_URL=postgresql://usuario:password@ep-xxxxx.us-east-2.aws.neon.tech/neondb?sslmode=require
-```
-
-**Ejemplo para Supabase:**
-```
-DATABASE_URL=postgresql://postgres.xxxxx:password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_DATABASE_URL=postgresql://postgres.xxxxx:password@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+DATABASE_URL="libsql://seminario-dci-rlarquing.turso.io?authToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 ---
 
-### PASO 4: Configurar Build Settings
+### PASO 4: Instalar dependencia Turso
 
-En Vercel → **Settings** → **General** → **Build & Development Settings**:
-
-**Build Command:**
-```
-prisma generate && prisma migrate deploy && next build
-```
-
-**Install Command:**
-```
-bun install
+```bash
+bun add @libsql/client
 ```
 
 ---
 
-### PASO 5: Desplegar
+### PASO 5: Actualizar Prisma para Turso
 
-1. Haz push a tu repositorio:
+Edita `prisma/schema.prisma` - solo necesitas agregar el output:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+```
+
+---
+
+### PASO 6: Actualizar el cliente de base de datos
+
+Reemplaza el contenido de `src/lib/db.ts`:
+
+```typescript
+import { PrismaClient } from '@prisma/client'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
+import { createClient } from '@libsql/client'
+
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+
+export const db = globalForPrisma.prisma || (() => {
+  // Detectar si es Turso (URL comienza con libsql://)
+  if (process.env.DATABASE_URL?.startsWith('libsql://')) {
+    const url = process.env.DATABASE_URL.split('?')[0]
+    const authToken = process.env.DATABASE_URL.split('authToken=')[1]
+    
+    const libsql = createClient({ url, authToken })
+    const adapter = new PrismaLibSQL(libsql)
+    return new PrismaClient({ adapter })
+  }
+  
+  // SQLite local para desarrollo
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+  })
+})()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+```
+
+---
+
+### PASO 7: Configurar Build en Vercel
+
+En Vercel → **Settings** → **General** → **Build Command**:
+
+```
+prisma generate && next build
+```
+
+---
+
+### PASO 8: Desplegar
+
+1. Sube los cambios:
 ```bash
 git add .
-git commit -m "configure for vercel deployment"
+git commit -m "configurar para turso"
 git push
 ```
 
-2. Vercel detectará los cambios y desplegará automáticamente
+2. Vercel desplegará automáticamente
 
-3. **Primera vez:** Después del despliegue, inicializa las asignaturas:
+3. Después del despliegue, inicializa las asignaturas:
 ```bash
 curl -X POST https://tu-app.vercel.app/api/asignaturas/init
 ```
 
 ---
 
+## 📋 RESUMEN DE VARIABLES DE ENTORNO
+
+### Para DESARROLLO LOCAL (`.env`):
+```env
+DATABASE_URL="file:./db/local.db"
+```
+
+### Para VERCEL con TURSO:
+```env
+DATABASE_URL="libsql://TU-BASE.turso.io?authToken=TU-TOKEN"
+```
+
+---
+
 ## 🔧 Solución de Problemas
 
-### Error: "Can't reach database server"
-- Verifica que las variables `DATABASE_URL` y `DIRECT_DATABASE_URL` estén correctas
-- Asegúrate de que la base de datos PostgreSQL esté activa
+### Error: "libsql client not found"
+```bash
+bun add @libsql/client
+```
 
-### Error: "Prisma Client could not be generated"
-- El schema tiene un error de sintaxis
-- Verifica que el provider sea `postgresql`
+### Error: "PrismaLibSQL not found"
+```bash
+bun add @prisma/adapter-libsql
+```
 
-### Error: "Table doesn't exist"
-- Ejecuta las migraciones: `prisma migrate deploy`
-- O usa `prisma db push` en el build
+### Error: "Can't reach database"
+- Verifica que el token de Turso sea correcto
+- Asegúrate de que la URL sea `libsql://...` (no `https://...`)
+
+### Error: "Database locked"
+- Turso no tiene este problema (es serverless)
+- Si pasa localmente, reinicia el servidor
 
 ---
 
@@ -193,26 +238,11 @@ curl -X POST https://tu-app.vercel.app/api/asignaturas/init
 
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
 - **UI Components**: shadcn/ui, Lucide Icons
-- **Base de Datos**: SQLite (desarrollo) / PostgreSQL (producción)
+- **Base de Datos**: SQLite (desarrollo) / Turso (producción)
 - **ORM**: Prisma
 - **PDF**: jsPDF, jspdf-autotable
 
-## 📁 Estructura del Proyecto
-
-```
-src/
-├── app/
-│   ├── api/           # API Routes (REST)
-│   │   ├── alumnos/   # CRUD alumnos
-│   │   ├── profesores/# CRUD profesores
-│   │   ├── asignaturas/# CRUD asignaturas
-│   │   ├── notas/     # CRUD notas
-│   │   └── certificado/ # Generación certificados
-│   └── page.tsx       # Página principal
-├── components/        # Componentes React
-└── lib/
-    └── db.ts          # Cliente Prisma
-```
+---
 
 ## 🎨 Personalización
 
