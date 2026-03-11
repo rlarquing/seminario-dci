@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // GET - Listar todos los alumnos
 export async function GET() {
   try {
+    const db = getDb()
     const alumnos = await db.alumno.findMany({
       orderBy: { numeroExpediente: 'asc' },
       include: {

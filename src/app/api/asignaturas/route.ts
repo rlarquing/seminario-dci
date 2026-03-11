@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // GET - Listar todas las asignaturas
 export async function GET() {
   try {
+    const db = getDb()
     const asignaturas = await db.asignatura.findMany({
       orderBy: { id: 'asc' }
     })

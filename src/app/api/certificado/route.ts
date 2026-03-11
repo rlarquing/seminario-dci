@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // GET - Obtener datos completos para certificado
 export async function GET(request: Request) {
   try {
+    const db = getDb()
     const { searchParams } = new URL(request.url)
     const alumnoId = searchParams.get('alumnoId')
     

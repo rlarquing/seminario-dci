@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // DELETE - Eliminar nota
 export async function DELETE(
@@ -7,6 +7,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const db = getDb()
     const { id } = await params
     await db.nota.delete({
       where: { id: parseInt(id) }

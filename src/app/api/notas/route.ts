@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // GET - Listar todas las notas
 export async function GET(request: NextRequest) {
   try {
+    const db = getDb()
     const { searchParams } = new URL(request.url)
     const alumnoId = searchParams.get('alumnoId')
     
@@ -35,6 +36,7 @@ export async function GET(request: NextRequest) {
 // POST - Crear o actualizar nota
 export async function POST(request: NextRequest) {
   try {
+    const db = getDb()
     const data = await request.json()
     
     const nota = await db.nota.upsert({

@@ -35,6 +35,17 @@ function createPrismaClient() {
   })
 }
 
-export const db = globalForPrisma.prisma || createPrismaClient()
+let prisma: PrismaClient
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+export function getDb() {
+  if (!prisma) {
+    prisma = globalForPrisma.prisma || createPrismaClient()
+    if (process.env.NODE_ENV !== 'production') {
+      globalForPrisma.prisma = prisma
+    }
+  }
+  return prisma
+}
+
+// For backwards compatibility, but new code should use getDb()
+export const db = getDb()

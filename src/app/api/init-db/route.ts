@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // Asignaturas iniciales del Seminario DCI
 const ASIGNATURAS_INICIALES = [
@@ -141,6 +141,8 @@ export async function POST() {
       // Usar Prisma para crear las tablas (ya están gestionadas por Prisma migrate/db push)
       // Solo insertar asignaturas iniciales si no existen
       console.log('Inicializando datos en SQLite local...')
+      
+      const db = getDb()
       
       // Verificar si ya hay asignaturas
       const existingAsignaturas = await db.asignatura.findMany()

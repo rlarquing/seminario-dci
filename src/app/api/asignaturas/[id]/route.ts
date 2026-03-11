@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // GET - Obtener una asignatura por ID
 export async function GET(
@@ -7,6 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const db = getDb()
     const { id } = await params
     const asignatura = await db.asignatura.findUnique({
       where: { id: parseInt(id) }
@@ -29,6 +30,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const db = getDb()
     const { id } = await params
     const data = await request.json()
     
@@ -53,6 +55,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const db = getDb()
     const { id } = await params
     await db.asignatura.delete({
       where: { id: parseInt(id) }
