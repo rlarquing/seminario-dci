@@ -67,7 +67,7 @@ Agrega estas **DOS** variables:
 
 | Nombre | Valor | Ejemplo |
 |--------|-------|---------|
-| `DATABASE_URL` | La URL de tu base de datos | `libsql://seminario-dci-abc123.turso.io` |
+| `TURSO_DATABASE_URL` | La URL de tu base de datos | `libsql://seminario-dci-abc123.turso.io` |
 | `TURSO_AUTH_TOKEN` | El token que copiaste | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 
 ⚠️ **IMPORTANTE**: Son DOS variables separadas, NO una sola.
@@ -118,6 +118,38 @@ Si todo salió bien, verás una respuesta como:
 
 ---
 
+## 💻 Instalación Local
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/rlarquing/seminario-dci.git
+cd seminario-dci
+
+# Instalar dependencias
+bun install
+
+# Configurar base de datos local
+bun run db:push
+
+# Iniciar servidor
+bun run dev
+```
+
+La base de datos local se crea automáticamente en `prisma/db/custom.db`
+
+**Nota**: Después de ejecutar `db:push`, debes inicializar los datos iniciales (asignaturas):
+
+```bash
+curl -X POST http://localhost:3000/api/init-db
+```
+
+O desde el navegador, abre la consola (F12) y ejecuta:
+```javascript
+fetch('/api/init-db', { method: 'POST' }).then(r => r.json()).then(console.log)
+```
+
+---
+
 ## 🔧 Solución de Problemas
 
 ### Error: "Authentication failed"
@@ -125,7 +157,7 @@ Si todo salió bien, verás una respuesta como:
 - Asegúrate de que el token no haya expirado
 
 ### Error: "Database not found"
-- Verifica que la `DATABASE_URL` sea correcta
+- Verifica que la `TURSO_DATABASE_URL` sea correcta
 - Debe empezar con `libsql://` (no `https://`)
 
 ### Error: "Table not found"
@@ -164,7 +196,7 @@ No necesitas configurar nada, usa SQLite local automáticamente.
 
 ### Para VERCEL (PRODUCCIÓN):
 ```
-DATABASE_URL=libsql://tu-base.turso.io
+TURSO_DATABASE_URL=libsql://tu-base.turso.io
 TURSO_AUTH_TOKEN=tu-token-de-turso
 ```
 
