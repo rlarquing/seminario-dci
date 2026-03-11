@@ -41,8 +41,9 @@ export async function POST() {
 
       // Crear las tablas
       console.log('Creando tablas en Turso...')
-      await client.executeBatch(`
-        CREATE TABLE IF NOT EXISTS alumnos (
+      
+      const sqlStatements = [
+        `CREATE TABLE IF NOT EXISTS alumnos (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           numeroExpediente INTEGER NOT NULL UNIQUE,
           nombre TEXT NOT NULL,
@@ -61,15 +62,15 @@ export async function POST() {
           habilidades TEXT,
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS asignaturas (
+        )`,
+        `CREATE TABLE IF NOT EXISTS asignaturas (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nombre TEXT NOT NULL,
           codigo TEXT UNIQUE,
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS profesores (
+        )`,
+        `CREATE TABLE IF NOT EXISTS profesores (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nombre TEXT NOT NULL,
           ci TEXT NOT NULL,
@@ -84,8 +85,8 @@ export async function POST() {
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id)
-        );
-        CREATE TABLE IF NOT EXISTS notas (
+        )`,
+        `CREATE TABLE IF NOT EXISTS notas (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           alumnoId INTEGER NOT NULL,
           asignaturaId INTEGER NOT NULL,
@@ -95,8 +96,12 @@ export async function POST() {
           FOREIGN KEY (alumnoId) REFERENCES alumnos(id) ON DELETE CASCADE,
           FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id),
           UNIQUE(alumnoId, asignaturaId)
-        );
-      `.split(';').filter(sql => sql.trim()).map(sql => ({ sql: sql.trim() })))
+        )`
+      ]
+      
+      for (const sql of sqlStatements) {
+        await client.execute({ sql })
+      }
       
       console.log('Tablas creadas correctamente en Turso')
 
