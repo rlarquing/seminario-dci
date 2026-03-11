@@ -8,58 +8,57 @@ Sistema completo de gestión académica para el Seminario DCI, desarrollado con 
 
 ## 📋 Características
 
-### Gestión de Alumnos
-- Registro completo de información personal
-- Número de expediente único
-- Carnet de identidad, pasaporte
-- Información eclesiástica (iglesia, pastor)
-- Control de documentación (huella biométrica, foto)
-- Pago de cuotas
-
-### Gestión de Profesores
-- Registro de datos personales
-- Asignación de materias que imparten
-
-### Gestión de Asignaturas
-- 8 asignaturas del seminario precargadas
-- Administración de códigos
-
-### Sistema de Notas
-- Ingreso de calificaciones por alumno y asignatura
-- Cálculo automático de promedios
-
-### Certificados de Notas
-- Vista previa del certificado con logo institucional
-- Generación de PDF profesional
-- Opción de impresión directa
+- **Gestión de Alumnos**: Registro completo con información personal y eclesiástica
+- **Gestión de Profesores**: Datos personales y asignaturas que imparten
+- **Gestión de Asignaturas**: 8 materias del seminario precargadas
+- **Sistema de Notas**: Calificaciones con cálculo automático de promedios
+- **Certificados**: Vista previa, PDF e impresión
 
 ---
 
-## 🚀 DESPLIEGUE EN VERCEL CON TURSO
+## 🚀 INICIO RÁPIDO
 
-### Paso 1: Crear cuenta en Turso
+### Opción A: Desarrollo Local (SQLite)
 
-1. Ve a [turso.tech](https://turso.tech) y crea una cuenta GRATIS
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/rlarquing/seminario-dci.git
+cd seminario-dci
+
+# 2. Instalar dependencias
+npm install
+
+# 3. Crear la base de datos local
+npm run db:push
+
+# 4. Iniciar el servidor
+npm run dev
+```
+
+Abre http://localhost:3000 en tu navegador.
+
+---
+
+### Opción B: Producción con Turso (Vercel)
+
+#### Paso 1: Crear base de datos en Turso
+
+1. Ve a [turso.tech](https://turso.tech) y crea una cuenta **GRATIS**
 2. Haz clic en **"Create Database"**
-3. Ponle un nombre (ej: `seminario-dci`)
+3. Nombre: `seminario-dci` (o el que prefieras)
 4. Selecciona cualquier región
 
-### Paso 2: Obtener las credenciales
+#### Paso 2: Obtener credenciales
 
 En el dashboard de Turso:
 
-1. **URL de la base de datos**: Se ve así:
-   ```
-   libsql://seminario-dci-TU-USUARIO.turso.io
-   ```
-   (La encuentras en la página principal de tu base de datos)
+- **DATABASE_URL**: La URL de tu base de datos (ej: `libsql://seminario-dci-abc123.turso.io`)
+- **TURSO_AUTH_TOKEN**: 
+  1. Ve a **Settings** → **Database Authentication**
+  2. Clic en **"Create Token"**
+  3. Copia el token (solo se muestra una vez)
 
-2. **Token de autenticación**:
-   - Ve a **Settings** → **Database Authentication**
-   - Haz clic en **"Create Token"**
-   - Copia el token (solo se muestra una vez)
-
-### Paso 3: Configurar variables en Vercel
+#### Paso 3: Configurar variables en Vercel
 
 Ve a tu proyecto en Vercel → **Settings** → **Environment Variables**
 
@@ -67,105 +66,102 @@ Agrega estas **DOS** variables:
 
 | Nombre | Valor | Ejemplo |
 |--------|-------|---------|
-| `DATABASE_URL` | La URL de tu base de datos | `libsql://seminario-dci-abc123.turso.io` |
-| `TURSO_AUTH_TOKEN` | El token que copiaste | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `DATABASE_URL` | URL de Turso | `libsql://seminario-dci-abc123.turso.io` |
+| `TURSO_AUTH_TOKEN` | Token de autenticación | `eyJhbGciOiJIUzI1NiIs...` |
 
-⚠️ **IMPORTANTE**: Son DOS variables separadas, NO una sola.
-
-### Paso 4: Desplegar en Vercel
+#### Paso 4: Desplegar
 
 1. Conecta tu repositorio de GitHub a Vercel
 2. Vercel detectará Next.js automáticamente
-3. Haz clic en **Deploy**
+3. Clic en **Deploy**
 
-### Paso 5: Inicializar la base de datos
+#### Paso 5: Inicializar la base de datos
 
-Después de que Vercel termine el despliegue, necesitas crear las tablas y los datos iniciales.
+**IMPORTANTE**: Después del despliegue, debes crear las tablas.
 
-**Opción A - Desde el navegador:**
-1. Abre tu navegador
-2. Ve a: `https://TU-APP.vercel.app/api/init-db`
-3. Verás un mensaje de instrucciones
-4. Ahora usa una herramienta como Postman, Insomnia o curl para hacer un **POST** a esa misma URL
-
-**Opción B - Desde terminal (curl):**
-```bash
-curl -X POST https://TU-APP.vercel.app/api/init-db
-```
-
-**Opción C - Desde el navegador (método simple):**
-1. Abre la consola del navegador (F12)
-2. Escribe:
+Abre la consola del navegador (F12) en tu sitio y ejecuta:
 ```javascript
 fetch('/api/init-db', { method: 'POST' }).then(r => r.json()).then(console.log)
 ```
 
-### Paso 6: Verificar
-
-Si todo salió bien, verás una respuesta como:
-```json
-{
-  "success": true,
-  "message": "Base de datos inicializada correctamente",
-  "tablas": ["alumnos", "asignaturas", "profesores", "notas"],
-  "asignaturas": [
-    { "id": 1, "nombre": "Hermenéutica", "codigo": "HER-101" },
-    { "id": 2, "nombre": "Homilética", "codigo": "HOM-101" },
-    ...
-  ]
-}
-```
-
----
-
-## 🔧 Solución de Problemas
-
-### Error: "Authentication failed"
-- Verifica que el `TURSO_AUTH_TOKEN` sea correcto
-- Asegúrate de que el token no haya expirado
-
-### Error: "Database not found"
-- Verifica que la `DATABASE_URL` sea correcta
-- Debe empezar con `libsql://` (no `https://`)
-
-### Error: "Table not found"
-- Ejecuta el endpoint `/api/init-db` con método POST
-
-### La página carga pero no muestra datos
-- Ejecuta `/api/init-db` para crear las tablas y datos iniciales
-
----
-
-## 💻 Instalación Local
-
+O desde terminal:
 ```bash
-# Clonar el repositorio
-git clone https://github.com/rlarquing/seminario-dci.git
-cd seminario-dci
-
-# Instalar dependencias
-bun install
-
-# Configurar base de datos local
-bun run db:push
-
-# Iniciar servidor
-bun run dev
+curl -X POST https://tu-app.vercel.app/api/init-db
 ```
 
-La base de datos local se crea automáticamente en `prisma/db/custom.db`
+#### Paso 6: Verificar
+
+Visita este endpoint para ver el estado de la base de datos:
+```
+https://tu-app.vercel.app/api/status
+```
 
 ---
 
-## 📝 Variables de Entorno
+## 🔧 Endpoints de Diagnóstico
 
-### Para DESARROLLO LOCAL:
-No necesitas configurar nada, usa SQLite local automáticamente.
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/status` | GET | Verifica conexión y cuenta registros |
+| `/api/init-db` | GET | Muestra instrucciones de inicialización |
+| `/api/init-db` | POST | Crea las tablas y datos iniciales |
 
-### Para VERCEL (PRODUCCIÓN):
+---
+
+## 🐛 Solución de Problemas
+
+### Error: "Falta configurar DATABASE_URL"
+- Ve a Vercel → Settings → Environment Variables
+- Agrega `DATABASE_URL` con tu URL de Turso
+
+### Error: "Falta configurar TURSO_AUTH_TOKEN"
+- Ve a Vercel → Settings → Environment Variables
+- Agrega `TURSO_AUTH_TOKEN` con tu token de Turso
+
+### Error: "Table not found" o "no such table"
+- Ejecuta el inicializador: `curl -X POST https://tu-app.vercel.app/api/init-db`
+- O desde la consola del navegador: `fetch('/api/init-db', {method: 'POST'}).then(r=>r.json()).then(console.log)`
+
+### La página carga pero muestra "No hay alumnos"
+- Primero debes agregar alumnos desde la pestaña "Alumnos"
+- Las asignaturas se crean automáticamente al inicializar
+
+### Error en Windows: "tee no se reconoce"
+- Ya está solucionado en la última versión
+- Ejecuta `git pull` para obtener los cambios
+
+---
+
+## 📁 Estructura del Proyecto
+
 ```
-DATABASE_URL=libsql://tu-base.turso.io
-TURSO_AUTH_TOKEN=tu-token-de-turso
+├── prisma/
+│   └── schema.prisma      # Esquema de la base de datos
+├── public/
+│   └── images/            # Logo y QR del seminario
+├── src/
+│   ├── app/
+│   │   ├── api/           # Endpoints REST
+│   │   └── page.tsx       # Página principal
+│   ├── components/        # Componentes React
+│   └── lib/
+│       └── db.ts          # Cliente de base de datos
+└── .env                   # Configuración local
+```
+
+---
+
+## 🔐 Variables de Entorno
+
+### Desarrollo Local (.env)
+```env
+DATABASE_URL="file:./db/custom.db"
+```
+
+### Producción (Vercel)
+```env
+DATABASE_URL="libsql://tu-base.turso.io"
+TURSO_AUTH_TOKEN="eyJhbGciOiJIUzI1NiIs..."
 ```
 
 ---
