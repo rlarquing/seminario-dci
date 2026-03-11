@@ -2,15 +2,36 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 export async function GET() {
+  // Detectar configuración de base de datos
+  const tursoUrl = process.env.TURSO_DATABASE_URL
+  const tursoToken = process.env.TURSO_AUTH_TOKEN
   const databaseUrl = process.env.DATABASE_URL
-  const authToken = process.env.TURSO_AUTH_TOKEN
+  
+  let dbType = 'SQLite Local'
+  let dbUrl = 'file:./db/custom.db'
+  
+  if (tursoUrl?.startsWith('libsql://') && tursoToken) {
+    dbType = 'Turso'
+    dbUrl = tursoUrl
+  } else if (databaseUrl?.startsWith('libsql://') && tursoToken) {
+    dbType = 'Turso'
+    dbUrl = databaseUrl
+  } else if (databaseUrl) {
+    dbType = 'SQLite Local'
+    dbUrl = databaseUrl
+  }
   
   const status = {
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
     database: {
-      type: databaseUrl?.startsWith('libsql://') ? 'Turso' : 'SQLite Local',
-      url: databaseUrl ? (databaseUrl.startsWith('libsql://') ? databaseUrl : 'file:./db/custom.db') : null,
-      hasAuthToken: !!authToken
+      type: dbType,
+      url: dbUrl,
+      variables: {
+        TURSO_DATABASE_URL: tursoUrl ? '✓ Configurado' : '✗ No configurado',
+        TURSO_AUTH_TOKEN: tursoToken ? '✓ Configurado' : '✗ No configurado',
+        DATABASE_URL: databaseUrl ? '✓ Configurado' : '✗ No configurado'
+      }
     },
     connection: 'checking' as string,
     tables: {} as Record<string, number>,
@@ -36,5 +57,5 @@ export async function GET() {
     status.errors.push(error instanceof Error ? error.message : 'Error desconocido')
   }
 
-  return NextResponse.json(status)
+  return NextResponse.json(status, { status: status.connection === 'error' ? 500 : 200 })
 }

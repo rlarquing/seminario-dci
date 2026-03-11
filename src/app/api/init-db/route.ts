@@ -4,7 +4,6 @@ import { db } from '@/lib/db'
 
 // SQL para crear las tablas
 const CREATE_TABLES_SQL = `
--- Tabla de Alumnos
 CREATE TABLE IF NOT EXISTS alumnos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   numeroExpediente INTEGER NOT NULL UNIQUE,
@@ -26,7 +25,6 @@ CREATE TABLE IF NOT EXISTS alumnos (
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Asignaturas
 CREATE TABLE IF NOT EXISTS asignaturas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nombre TEXT NOT NULL,
@@ -35,7 +33,6 @@ CREATE TABLE IF NOT EXISTS asignaturas (
   updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Profesores
 CREATE TABLE IF NOT EXISTS profesores (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   nombre TEXT NOT NULL,
@@ -53,7 +50,6 @@ CREATE TABLE IF NOT EXISTS profesores (
   FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id)
 );
 
--- Tabla de Notas
 CREATE TABLE IF NOT EXISTS notas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   alumnoId INTEGER NOT NULL,
@@ -79,34 +75,31 @@ const ASIGNATURAS_INICIALES = [
   { nombre: 'Doctrinas Bíblicas', codigo: 'DBI-101' },
 ]
 
+function getConfig() {
+  const tursoUrl = process.env.TURSO_DATABASE_URL
+  const tursoToken = process.env.TURSO_AUTH_TOKEN
+  const databaseUrl = process.env.DATABASE_URL
+  
+  if (tursoUrl?.startsWith('libsql://') && tursoToken) {
+    return { type: 'turso', url: tursoUrl, token: tursoToken }
+  }
+  
+  if (databaseUrl?.startsWith('libsql://') && tursoToken) {
+    return { type: 'turso', url: databaseUrl, token: tursoToken }
+  }
+  
+  return { type: 'local', url: databaseUrl || 'file:./db/custom.db', token: null }
+}
+
 export async function POST() {
+  const config = getConfig()
+  
   try {
-    const databaseUrl = process.env.DATABASE_URL
-    const authToken = process.env.TURSO_AUTH_TOKEN
-    
-    // Mostrar información de configuración
-    const configInfo = {
-      databaseUrl: databaseUrl ? (databaseUrl.startsWith('libsql://') ? databaseUrl : 'SQLite local') : 'NO CONFIGURADO',
-      hasAuthToken: !!authToken,
-      isTurso: databaseUrl?.startsWith('libsql://') || false
-    }
-
     // Si es Turso, usar libsql client directamente
-    if (databaseUrl?.startsWith('libsql://')) {
-      if (!authToken) {
-        return NextResponse.json(
-          { 
-            error: 'Falta TURSO_AUTH_TOKEN',
-            configuracion: configInfo,
-            ayuda: 'Agrega TURSO_AUTH_TOKEN en las variables de entorno de Vercel'
-          },
-          { status: 400 }
-        )
-      }
-
+    if (config.type === 'turso') {
       const client = createClient({
-        url: databaseUrl,
-        authToken: authToken,
+        url: config.url,
+        authToken: config.token!,
       })
 
       // Crear las tablas
@@ -117,13 +110,11 @@ export async function POST() {
         try {
           await client.execute(sql.trim())
         } catch (e) {
-          // Ignorar errores de "table already exists"
           if (!(e instanceof Error && e.message.includes('already exists'))) {
             console.log('SQL Warning:', e)
           }
         }
       }
-      console.log('Tablas creadas correctamente')
 
       // Insertar asignaturas iniciales
       console.log('Insertando asignaturas...')
@@ -138,23 +129,24 @@ export async function POST() {
         }
       }
 
-      // Verificar
       const result = await client.execute('SELECT * FROM asignaturas ORDER BY id')
       
       return NextResponse.json({
         success: true,
         message: 'Base de datos Turso inicializada correctamente',
-        configuracion: configInfo,
+        configuracion: {
+          tipo: 'Turso',
+          url: config.url
+        },
         tablas: ['alumnos', 'asignaturas', 'profesores', 'notas'],
         asignaturasCreadas: result.rows.length,
         asignaturas: result.rows
       })
     }
 
-    // Si es SQLite local, usar Prisma
+    // SQLite local - usar Prisma
     console.log('Usando SQLite local con Prisma...')
     
-    // Intentar crear asignaturas con Prisma
     for (const asignatura of ASIGNATURAS_INICIALES) {
       await db.asignatura.upsert({
         where: { codigo: asignatura.codigo },
@@ -168,19 +160,23 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       message: 'Base de datos local inicializada correctamente',
-      configuracion: configInfo,
+      configuracion: {
+        tipo: 'SQLite Local',
+        url: config.url
+      },
       asignaturasCreadas: asignaturas.length,
       asignaturas,
-      nota: 'Para desarrollo local, usa: npm run db:push para crear las tablas'
+      nota: 'Para desarrollo local, ejecuta: npm run db:push'
     })
 
   } catch (error) {
     console.error('Error inicializando base de datos:', error)
     return NextResponse.json(
       { 
+        success: false,
         error: 'Error al inicializar la base de datos',
         details: error instanceof Error ? error.message : 'Error desconocido',
-        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+        configuracion: config
       },
       { status: 500 }
     )
@@ -188,20 +184,25 @@ export async function POST() {
 }
 
 export async function GET() {
-  const databaseUrl = process.env.DATABASE_URL
-  const authToken = process.env.TURSO_AUTH_TOKEN
+  const config = getConfig()
   
   return NextResponse.json({
     message: 'Inicializador de Base de Datos - Seminario DCI',
-    configuracionActual: {
-      DATABASE_URL: databaseUrl ? (databaseUrl.startsWith('libsql://') ? databaseUrl : 'SQLite local (file:./db/custom.db)') : 'NO CONFIGURADO',
-      TURSO_AUTH_TOKEN: authToken ? '✓ Configurado' : '✗ No configurado',
-      modo: databaseUrl?.startsWith('libsql://') ? 'TURSO (Producción)' : 'SQLite Local (Desarrollo)'
+    configuracionDetectada: {
+      tipo: config.type === 'turso' ? 'Turso (Producción)' : 'SQLite Local (Desarrollo)',
+      url: config.url,
+      token: config.token ? '✓ Configurado' : '✗ No configurado'
+    },
+    variablesDeEntorno: {
+      TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL ? '✓ Configurado' : '✗ No configurado',
+      TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ? '✓ Configurado' : '✗ No configurado',
+      DATABASE_URL: process.env.DATABASE_URL ? '✓ Configurado' : '✗ No configurado'
     },
     instrucciones: {
-      inicializar: 'Haz POST a este endpoint para inicializar la base de datos',
-      curl: 'curl -X POST https://tu-app.vercel.app/api/init-db',
-      navegador: 'Abre la consola (F12) y ejecuta: fetch("/api/init-db", {method: "POST"}).then(r=>r.json()).then(console.log)'
+      inicializar: 'POST /api/init-db - Crea las tablas y datos iniciales',
+      verificar: 'GET /api/status - Verifica el estado de la base de datos',
+      curlProduccion: 'curl -X POST https://tu-app.vercel.app/api/init-db',
+      navegadorConsola: 'fetch("/api/init-db", {method: "POST"}).then(r=>r.json()).then(console.log)'
     }
   })
 }
