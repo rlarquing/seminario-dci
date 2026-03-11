@@ -82,10 +82,36 @@ export async function POST() {
   try {
     // Verificar que estamos usando Turso
     const databaseUrl = process.env.DATABASE_URL
+    const authToken = process.env.TURSO_AUTH_TOKEN
     
-    if (!databaseUrl?.startsWith('libsql://')) {
+    // Debug: Mostrar qué variables están configuradas
+    if (!databaseUrl) {
       return NextResponse.json(
-        { error: 'Esta API solo funciona con Turso (libsql:// URLs)' },
+        { 
+          error: 'Falta configurar DATABASE_URL en Vercel',
+          ayuda: 'Ve a Settings → Environment Variables y agrega DATABASE_URL con el valor: libsql://tu-base.turso.io'
+        },
+        { status: 400 }
+      )
+    }
+
+    if (!databaseUrl.startsWith('libsql://')) {
+      return NextResponse.json(
+        { 
+          error: 'DATABASE_URL debe empezar con libsql://',
+          valorActual: databaseUrl.substring(0, 30) + '...',
+          ayuda: 'El formato correcto es: libsql://tu-base.turso.io'
+        },
+        { status: 400 }
+      )
+    }
+
+    if (!authToken) {
+      return NextResponse.json(
+        { 
+          error: 'Falta configurar TURSO_AUTH_TOKEN en Vercel',
+          ayuda: 'Ve a Settings → Environment Variables y agrega TURSO_AUTH_TOKEN con tu token de Turso'
+        },
         { status: 400 }
       )
     }
@@ -93,7 +119,7 @@ export async function POST() {
     // Crear cliente de Turso
     const client = createClient({
       url: databaseUrl,
-      authToken: process.env.TURSO_AUTH_TOKEN,
+      authToken: authToken,
     })
 
     // Crear las tablas
