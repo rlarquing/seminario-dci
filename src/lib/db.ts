@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
+import path from 'path'
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
@@ -24,11 +25,21 @@ function createPrismaClient() {
   }
   
   // Local SQLite configuration - use DATABASE_URL if provided
-  const databaseUrl = process.env.DATABASE_URL
+  let databaseUrl = process.env.DATABASE_URL
+  
+  // Convert relative file path to absolute path with forward slashes for cross-platform compatibility
+  if (databaseUrl?.startsWith('file:./')) {
+    const relativePath = databaseUrl.replace('file:', '')
+    const absolutePath = path.resolve(relativePath)
+    // Normalize to forward slashes for SQLite URL compatibility on all platforms
+    const normalizedPath = absolutePath.replace(/\\/g, '/')
+    databaseUrl = `file:${normalizedPath}`
+  }
+  
   return new PrismaClient({
     datasources: {
       db: {
-        url: databaseUrl || 'file:./prisma/dev.db',
+        url: databaseUrl || `file:${path.resolve('./prisma/dev.db').replace(/\\/g, '/')}`,
       },
     },
     log: process.env.NODE_ENV === 'development' ? ['query'] : [],
