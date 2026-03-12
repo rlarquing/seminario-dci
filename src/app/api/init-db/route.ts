@@ -132,7 +132,7 @@ export async function POST() {
         return NextResponse.json(
           {
             error: 'Falta configurar DATABASE_URL para desarrollo local',
-            ayuda: 'Crea un archivo .env con: DATABASE_URL="file:./prisma/db/custom.db"'
+            ayuda: 'Crea un archivo .env con: DATABASE_URL="file:./prisma/custom.db"'
           },
           { status: 400 }
         )

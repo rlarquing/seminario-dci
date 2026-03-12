@@ -8,7 +8,7 @@ export async function GET() {
   const databaseUrl = process.env.DATABASE_URL
   
   let dbType = 'SQLite Local'
-  let dbUrl = 'file:./db/custom.db'
+  let dbUrl = 'file:./prisma/custom.db'
   
   if (tursoUrl?.startsWith('libsql://') && tursoToken) {
     dbType = 'Turso'
