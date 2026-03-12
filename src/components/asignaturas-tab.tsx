@@ -160,12 +160,13 @@ export function AsignaturasTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="codigo">Código</Label>
+                    <Label htmlFor="codigo">Código *</Label>
                     <Input
                       id="codigo"
                       value={formData.codigo}
                       onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                       placeholder="Ej: ASI-001"
+                      required
                     />
                   </div>
                 </div>

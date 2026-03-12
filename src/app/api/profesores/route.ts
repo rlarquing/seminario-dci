@@ -22,6 +22,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json()
+    const db = getDb()
     
     const profesor = await db.profesor.create({
       data: {

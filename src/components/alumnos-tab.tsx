@@ -232,8 +232,8 @@ export function AlumnosTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="genero">Sexo</Label>
-                    <Select value={formData.genero} onValueChange={(value) => setFormData({ ...formData, genero: value })}>
+                    <Label htmlFor="genero">Sexo *</Label>
+                    <Select value={formData.genero} onValueChange={(value) => setFormData({ ...formData, genero: value })} required>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
@@ -244,70 +244,78 @@ export function AlumnosTab() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Label htmlFor="telefono">Teléfono *</Label>
                     <Input
                       id="telefono"
                       value={formData.telefono}
                       onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="pasaporte">No. Pasaporte</Label>
+                    <Label htmlFor="pasaporte">No. Pasaporte *</Label>
                     <Input
                       id="pasaporte"
                       value={formData.pasaporte}
                       onChange={(e) => setFormData({ ...formData, pasaporte: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="direccion">Dirección Particular</Label>
+                    <Label htmlFor="direccion">Dirección Particular *</Label>
                     <Textarea
                       id="direccion"
                       value={formData.direccion}
                       onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="nombreIglesia">Nombre de la Iglesia y Dirección</Label>
+                    <Label htmlFor="nombreIglesia">Nombre de la Iglesia y Dirección *</Label>
                     <Textarea
                       id="nombreIglesia"
                       value={formData.nombreIglesia}
                       onChange={(e) => setFormData({ ...formData, nombreIglesia: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nombrePastor">Nombre del Pastor</Label>
+                    <Label htmlFor="nombrePastor">Nombre del Pastor *</Label>
                     <Input
                       id="nombrePastor"
                       value={formData.nombrePastor}
                       onChange={(e) => setFormData({ ...formData, nombrePastor: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="pagoCuotas">Pago de Cuotas (meses)</Label>
+                    <Label htmlFor="pagoCuotas">Pago de Cuotas (meses) *</Label>
                     <Input
                       id="pagoCuotas"
                       value={formData.pagoCuotas}
                       onChange={(e) => setFormData({ ...formData, pagoCuotas: e.target.value })}
                       placeholder="Ej: 12, 6, Pendiente"
+                      required
                     />
                   </div>
                   <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="habilidades">Habilidades</Label>
+                    <Label htmlFor="habilidades">Habilidades *</Label>
                     <Textarea
                       id="habilidades"
                       value={formData.habilidades}
                       onChange={(e) => setFormData({ ...formData, habilidades: e.target.value })}
                       placeholder="Ej: Cocinero, maestro, electricista"
+                      required
                     />
                   </div>
                   

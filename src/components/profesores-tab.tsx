@@ -222,8 +222,8 @@ export function ProfesoresTab() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="genero">Sexo</Label>
-                    <Select value={formData.genero} onValueChange={(value) => setFormData({ ...formData, genero: value })}>
+                    <Label htmlFor="genero">Sexo *</Label>
+                    <Select value={formData.genero} onValueChange={(value) => setFormData({ ...formData, genero: value })} required>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
@@ -234,25 +234,27 @@ export function ProfesoresTab() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="telefono">Teléfono</Label>
+                    <Label htmlFor="telefono">Teléfono *</Label>
                     <Input
                       id="telefono"
                       value={formData.telefono}
                       onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="asignaturaId">Asignatura que Imparte</Label>
-                    <Select value={formData.asignaturaId} onValueChange={(value) => setFormData({ ...formData, asignaturaId: value })}>
+                    <Label htmlFor="asignaturaId">Asignatura que Imparte *</Label>
+                    <Select value={formData.asignaturaId} onValueChange={(value) => setFormData({ ...formData, asignaturaId: value })} required>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar asignatura" />
                       </SelectTrigger>
@@ -266,19 +268,21 @@ export function ProfesoresTab() {
                     </Select>
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <Label htmlFor="nombreIglesia">Nombre de la Iglesia y Dirección</Label>
+                    <Label htmlFor="nombreIglesia">Nombre de la Iglesia y Dirección *</Label>
                     <Textarea
                       id="nombreIglesia"
                       value={formData.nombreIglesia}
                       onChange={(e) => setFormData({ ...formData, nombreIglesia: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="nombrePastor">Nombre del Pastor</Label>
+                    <Label htmlFor="nombrePastor">Nombre del Pastor *</Label>
                     <Input
                       id="nombrePastor"
                       value={formData.nombrePastor}
                       onChange={(e) => setFormData({ ...formData, nombrePastor: e.target.value })}
+                      required
                     />
                   </div>
                   

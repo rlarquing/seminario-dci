@@ -26,6 +26,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json()
+    const db = getDb()
+    
+    // Validar campos requeridos
+    if (!data.numeroExpediente || !data.nombre || !data.ci) {
+      return NextResponse.json(
+        { error: 'Los campos No. Expediente, Nombre y Carnet de Identidad son obligatorios' },
+        { status: 400 }
+      )
+    }
     
     const alumno = await db.alumno.create({
       data: {
@@ -47,9 +56,21 @@ export async function POST(request: Request) {
       }
     })
     
-    return NextResponse.json(alumno)
-  } catch (error) {
+    return NextResponse.json(alumno, { status: 201 })
+  } catch (error: any) {
     console.error('Error creating alumno:', error)
+    
+    // Manejar errores de unicidad
+    if (error.code === 'P2002') {
+      const message = error.meta?.target?.includes('numeroExpediente')
+        ? 'Ya existe un alumno con ese número de expediente'
+        : error.meta?.target?.includes('ci')
+        ? 'Ya existe un alumno con ese carnet de identidad'
+        : 'Ya existe un alumno con esos datos'
+      
+      return NextResponse.json({ error: message }, { status: 409 })
+    }
+    
     return NextResponse.json({ error: 'Error al crear alumno' }, { status: 500 })
   }
 }

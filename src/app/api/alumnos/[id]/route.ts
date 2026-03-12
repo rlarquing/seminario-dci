@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getDb } from '@/lib/db'
 
 // GET - Obtener un alumno por ID
 export async function GET(
@@ -8,6 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    const db = getDb()
     const alumno = await db.alumno.findUnique({
       where: { id: parseInt(id) },
       include: {
@@ -38,6 +39,7 @@ export async function PUT(
   try {
     const { id } = await params
     const data = await request.json()
+    const db = getDb()
     
     const alumno = await db.alumno.update({
       where: { id: parseInt(id) },
@@ -74,6 +76,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    const db = getDb()
     await db.alumno.delete({
       where: { id: parseInt(id) }
     })

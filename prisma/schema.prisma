@@ -53,7 +53,7 @@ model Profesor {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  asignatura            Asignatura? @relation(fields: [asignaturaId], references: [id])
+  asignatura            Asignatura? @relation(fields: [asignaturaId], references: [id], onDelete: SetNull)
 
   @@map("profesores")
 }
@@ -81,7 +81,7 @@ model Nota {
   updatedAt    DateTime @updatedAt
 
   alumno       Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
-  asignatura   Asignatura @relation(fields: [asignaturaId], references: [id])
+  asignatura   Asignatura @relation(fields: [asignaturaId], references: [id], onDelete: Cascade)
 
   @@unique([alumnoId, asignaturaId])
   @@map("notas")

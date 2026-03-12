@@ -19,6 +19,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json()
+    const db = getDb()
     
     const asignatura = await db.asignatura.create({
       data: {

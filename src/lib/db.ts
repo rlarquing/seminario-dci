@@ -39,7 +39,7 @@ function createPrismaClient() {
   return new PrismaClient({
     datasources: {
       db: {
-        url: databaseUrl || `file:${path.resolve('./prisma/dev.db').replace(/\\/g, '/')}`,
+        url: databaseUrl || `file:${path.resolve('./prisma/custom.db').replace(/\\/g, '/')}`,
       },
     },
     log: process.env.NODE_ENV === 'development' ? ['query'] : [],
