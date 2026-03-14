@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
 
 // Asignaturas iniciales del Seminario DCI
 const ASIGNATURAS_INICIALES = [
@@ -15,23 +15,24 @@ const ASIGNATURAS_INICIALES = [
 
 export async function POST() {
   try {
-    // Detect environment
-    const tursoUrl = process.env.TURSO_DATABASE_URL
+    // Check for Turso
+    const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL
     const tursoToken = process.env.TURSO_AUTH_TOKEN
     const isTurso = tursoUrl?.startsWith('libsql://') && tursoToken
-    
-    // For Turso, we need to create tables with raw SQL
+
     if (isTurso) {
-      const { createClient } = await import('@libsql/client')
-      
+      console.log('🔌 Initializing Turso database...')
+
+      const { createClient } = require('@libsql/client')
+
       const client = createClient({
-        url: tursoUrl!,
-        authToken: tursoToken!,
+        url: tursoUrl,
+        authToken: tursoToken,
       })
 
-      console.log('Creating tables in Turso...')
-      
       // Create tables
+      console.log('Creating tables in Turso...')
+
       await client.execute(`
         CREATE TABLE IF NOT EXISTS alumnos (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,8 +123,9 @@ export async function POST() {
 
     // Local SQLite - use Prisma
     console.log('Initializing local SQLite with Prisma...')
+    const { getDb } = await import('@/lib/db')
     const db = getDb()
-    
+
     // Insert subjects if not exist
     for (const asignatura of ASIGNATURAS_INICIALES) {
       await db.asignatura.upsert({
@@ -138,9 +140,9 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       message: 'Local SQLite database initialized successfully!',
-      database: { 
-        type: 'SQLite Local', 
-        url: process.env.DATABASE_URL || 'file:./db/custom.db' 
+      database: {
+        type: 'SQLite Local',
+        url: process.env.DATABASE_URL || 'file:./db/custom.db'
       },
       subjectsCreated: asignaturas.length,
       subjects: asignaturas
@@ -174,7 +176,7 @@ export async function GET() {
     },
     instructions: {
       init: 'POST /api/init-db - Creates tables and initial data',
-      curl: 'curl -X POST https://your-app.vercel.app/api/init-db'
+      curl: 'curl -X POST https://seminario-dci.vercel.app/api/init-db'
     }
   })
 }
