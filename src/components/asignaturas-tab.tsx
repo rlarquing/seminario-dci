@@ -22,13 +22,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Pencil, Trash2, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, RotateCcw, BookOpen } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Asignatura {
   id: number
   nombre: string
   codigo: string | null
+  activo?: boolean
+  deletedAt?: string | null
 }
 
 const initialFormData = {
@@ -43,14 +45,18 @@ export function AsignaturasTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState(initialFormData)
+  const [showDeleted, setShowDeleted] = useState(false)
 
   useEffect(() => {
     fetchAsignaturas()
   }, [])
 
-  const fetchAsignaturas = async () => {
+  const fetchAsignaturas = async (onlyDeleted = false) => {
     try {
-      const response = await fetch('/api/asignaturas')
+      const url = onlyDeleted 
+        ? '/api/asignaturas?onlyDeleted=true' 
+        : '/api/asignaturas'
+      const response = await fetch(url)
       const data = await response.json()
       if (response.ok && Array.isArray(data)) {
         setAsignaturas(data)
@@ -60,7 +66,7 @@ export function AsignaturasTab() {
           toast.error(data.error)
         }
       }
-    } catch (error) {
+    } catch {
       setAsignaturas([])
       toast.error('Error al cargar las asignaturas')
     } finally {
@@ -73,26 +79,36 @@ export function AsignaturasTab() {
     
     try {
       if (editingId) {
-        await fetch(`/api/asignaturas/${editingId}`, {
+        const response = await fetch(`/api/asignaturas/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         })
-        toast.success('Asignatura actualizada correctamente')
+        if (response.ok) {
+          toast.success('Asignatura actualizada correctamente')
+        } else {
+          const data = await response.json()
+          toast.error(data.error || 'Error al actualizar')
+        }
       } else {
-        await fetch('/api/asignaturas', {
+        const response = await fetch('/api/asignaturas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         })
-        toast.success('Asignatura creada correctamente')
+        if (response.ok) {
+          toast.success('Asignatura creada correctamente')
+        } else {
+          const data = await response.json()
+          toast.error(data.error || 'Error al crear')
+        }
       }
       
       setIsDialogOpen(false)
       setFormData(initialFormData)
       setEditingId(null)
-      fetchAsignaturas()
-    } catch (error) {
+      fetchAsignaturas(showDeleted)
+    } catch {
       toast.error('Error al guardar la asignatura')
     }
   }
@@ -107,14 +123,37 @@ export function AsignaturasTab() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de eliminar esta asignatura?')) return
+    if (!confirm('¿Está seguro de eliminar esta asignatura? El registro se moverá a la papelera y podrá ser restaurado.')) return
     
     try {
-      await fetch(`/api/asignaturas/${id}`, { method: 'DELETE' })
-      toast.success('Asignatura eliminada correctamente')
-      fetchAsignaturas()
-    } catch (error) {
+      const response = await fetch(`/api/asignaturas/${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      
+      if (response.ok) {
+        toast.success(data.message || 'Asignatura eliminada correctamente')
+        fetchAsignaturas(showDeleted)
+      } else {
+        toast.error(data.error || 'Error al eliminar la asignatura')
+      }
+    } catch {
       toast.error('Error al eliminar la asignatura')
+    }
+  }
+
+  const handleRestore = async (id: number) => {
+    if (!confirm('¿Está seguro de restaurar esta asignatura?')) return
+    
+    try {
+      const response = await fetch(`/api/asignaturas/${id}`, { method: 'PATCH' })
+      const data = await response.json()
+      if (response.ok) {
+        toast.success(data.message || 'Asignatura restaurada correctamente')
+        fetchAsignaturas(true)
+      } else {
+        toast.error(data.error || 'Error al restaurar la asignatura')
+      }
+    } catch {
+      toast.error('Error al restaurar la asignatura')
     }
   }
 
@@ -184,8 +223,8 @@ export function AsignaturasTab() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <div className="relative">
+        <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Buscar asignatura..."
@@ -194,7 +233,26 @@ export function AsignaturasTab() {
               className="pl-10"
             />
           </div>
+          <Button
+            variant={showDeleted ? "destructive" : "outline"}
+            size="sm"
+            onClick={() => {
+              setShowDeleted(!showDeleted)
+              fetchAsignaturas(!showDeleted)
+            }}
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            {showDeleted ? 'Ver Activas' : 'Ver Eliminadas'}
+          </Button>
         </div>
+
+        {showDeleted && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">
+              <strong>Papelera:</strong> Aquí puede ver y restaurar las asignaturas eliminadas.
+            </p>
+          </div>
+        )}
         
         <div className="rounded-md border overflow-x-auto">
           <Table>
@@ -210,24 +268,32 @@ export function AsignaturasTab() {
               {filteredAsignaturas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                    No hay asignaturas registradas
+                    {showDeleted ? 'No hay asignaturas eliminadas' : 'No hay asignaturas registradas'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAsignaturas.map((asignatura) => (
-                  <TableRow key={asignatura.id}>
+                  <TableRow key={asignatura.id} className={showDeleted ? 'bg-red-50' : ''}>
                     <TableCell>{asignatura.id}</TableCell>
                     <TableCell>{asignatura.codigo || '-'}</TableCell>
                     <TableCell>{asignatura.nombre}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(asignatura)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(asignatura.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
+                      {showDeleted ? (
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" title="Restaurar" onClick={() => handleRestore(asignatura.id)}>
+                            <RotateCcw className="h-4 w-4 text-green-500" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(asignatura)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(asignatura.id)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

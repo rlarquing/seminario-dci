@@ -49,7 +49,7 @@ export async function PUT(
   }
 }
 
-// DELETE - Eliminar asignatura
+// DELETE - Soft delete (marcar como inactiva)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -57,13 +57,51 @@ export async function DELETE(
   try {
     const db = getDb()
     const { id } = await params
-    await db.asignatura.delete({
-      where: { id: parseInt(id) }
+    const idNum = parseInt(id)
+    
+    // Soft delete: marcar como inactiva y guardar fecha de eliminación
+    const asignatura = await db.asignatura.update({
+      where: { id: idNum },
+      data: {
+        activo: false,
+        deletedAt: new Date()
+      }
     })
     
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Asignatura eliminada correctamente. Puede restaurarla desde la sección de eliminados.' 
+    })
   } catch (error) {
     console.error('Error deleting asignatura:', error)
     return NextResponse.json({ error: 'Error al eliminar asignatura' }, { status: 500 })
+  }
+}
+
+// PATCH - Restaurar asignatura (marcar como activa)
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const db = getDb()
+    const { id } = await params
+    
+    const asignatura = await db.asignatura.update({
+      where: { id: parseInt(id) },
+      data: {
+        activo: true,
+        deletedAt: null
+      }
+    })
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Asignatura restaurada correctamente',
+      asignatura 
+    })
+  } catch (error) {
+    console.error('Error restoring asignatura:', error)
+    return NextResponse.json({ error: 'Error al restaurar asignatura' }, { status: 500 })
   }
 }

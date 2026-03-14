@@ -1,11 +1,25 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import type { NextRequest } from 'next/server'
 
-// GET - Listar todos los profesores
-export async function GET() {
+// GET - Listar todos los profesores (activos por defecto)
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+    const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+    
     const db = getDb()
+    
+    const where: { activo?: boolean } = {}
+    if (!includeDeleted) {
+      where.activo = true
+    } else if (onlyDeleted) {
+      where.activo = false
+    }
+    
     const profesores = await db.profesor.findMany({
+      where,
       orderBy: { id: 'asc' },
       include: {
         asignatura: true

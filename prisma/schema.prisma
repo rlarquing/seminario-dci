@@ -12,10 +12,10 @@ datasource db {
 }
 
 model Alumno {
-  id                        Int      @id @default(autoincrement())
-  numeroExpediente          Int      @unique
+  id                        Int       @id @default(autoincrement())
+  numeroExpediente          Int       @unique
   nombre                    String
-  ci                        String   @unique
+  ci                        String    @unique
   telefono                  String?
   email                     String?
   pasaporte                 String?
@@ -23,13 +23,15 @@ model Alumno {
   genero                    String?
   nombreIglesia             String?
   nombrePastor              String?
-  tomaHuellaBiometrica      Boolean  @default(false)
-  entregaFoto               Boolean  @default(false)
+  tomaHuellaBiometrica      Boolean   @default(false)
+  entregaFoto               Boolean   @default(false)
   pagoCuotas                String?
-  disposicionCampoMisionero Boolean  @default(false)
+  disposicionCampoMisionero Boolean   @default(false)
   habilidades               String?
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  activo                    Boolean   @default(true)
+  deletedAt                 DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
 
   notas                     Nota[]
 
@@ -37,7 +39,7 @@ model Alumno {
 }
 
 model Profesor {
-  id                    Int      @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   nombre                String
   ci                    String
   telefono              String?
@@ -45,11 +47,13 @@ model Profesor {
   genero                String?
   nombreIglesia         String?
   nombrePastor          String?
-  tomaHuellaBiometrica  Boolean  @default(false)
-  entregaFoto           Boolean  @default(false)
+  tomaHuellaBiometrica  Boolean   @default(false)
+  entregaFoto           Boolean   @default(false)
   asignaturaId          Int?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  activo                Boolean   @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   asignatura            Asignatura? @relation(fields: [asignaturaId], references: [id], onDelete: SetNull)
 
@@ -60,6 +64,8 @@ model Asignatura {
   id          Int        @id @default(autoincrement())
   nombre      String
   codigo      String?    @unique
+  activo      Boolean    @default(true)
+  deletedAt   DateTime?
   profesores  Profesor[]
   notas       Nota[]
   createdAt   DateTime   @default(now())

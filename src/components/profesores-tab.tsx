@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Pencil, Trash2, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, RotateCcw, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Profesor {
@@ -47,6 +47,8 @@ interface Profesor {
   entregaFoto: boolean
   asignaturaId: number | null
   asignatura?: { id: number; nombre: string } | null
+  activo?: boolean
+  deletedAt?: string | null
 }
 
 interface Asignatura {
@@ -76,15 +78,20 @@ export function ProfesoresTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState(initialFormData)
+  const [showDeleted, setShowDeleted] = useState(false)
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (onlyDeleted = false) => {
     try {
+      const profUrl = onlyDeleted 
+        ? '/api/profesores?onlyDeleted=true' 
+        : '/api/profesores'
+      
       const [profRes, asigRes] = await Promise.all([
-        fetch('/api/profesores'),
+        fetch(profUrl),
         fetch('/api/asignaturas')
       ])
       const profData = await profRes.json()
@@ -136,7 +143,7 @@ export function ProfesoresTab() {
       setIsDialogOpen(false)
       setFormData(initialFormData)
       setEditingId(null)
-      fetchData()
+      fetchData(showDeleted)
     } catch {
       toast.error('Error al guardar el profesor')
     }
@@ -160,14 +167,36 @@ export function ProfesoresTab() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de eliminar este profesor?')) return
+    if (!confirm('¿Está seguro de eliminar este profesor? El registro se moverá a la papelera y podrá ser restaurado.')) return
     
     try {
-      await fetch(`/api/profesores/${id}`, { method: 'DELETE' })
-      toast.success('Profesor eliminado correctamente')
-      fetchData()
+      const response = await fetch(`/api/profesores/${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (response.ok) {
+        toast.success(data.message || 'Profesor eliminado correctamente')
+        fetchData(showDeleted)
+      } else {
+        toast.error(data.error || 'Error al eliminar el profesor')
+      }
     } catch {
       toast.error('Error al eliminar el profesor')
+    }
+  }
+
+  const handleRestore = async (id: number) => {
+    if (!confirm('¿Está seguro de restaurar este profesor?')) return
+    
+    try {
+      const response = await fetch(`/api/profesores/${id}`, { method: 'PATCH' })
+      const data = await response.json()
+      if (response.ok) {
+        toast.success(data.message || 'Profesor restaurado correctamente')
+        fetchData(true)
+      } else {
+        toast.error(data.error || 'Error al restaurar el profesor')
+      }
+    } catch {
+      toast.error('Error al restaurar el profesor')
     }
   }
 
@@ -323,8 +352,8 @@ export function ProfesoresTab() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
-          <div className="relative">
+        <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Buscar por nombre o CI..."
@@ -333,7 +362,26 @@ export function ProfesoresTab() {
               className="pl-10"
             />
           </div>
+          <Button
+            variant={showDeleted ? "destructive" : "outline"}
+            size="sm"
+            onClick={() => {
+              setShowDeleted(!showDeleted)
+              fetchData(!showDeleted)
+            }}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            {showDeleted ? 'Ver Activos' : 'Ver Eliminados'}
+          </Button>
         </div>
+
+        {showDeleted && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-700">
+              <strong>Papelera:</strong> Aquí puede ver y restaurar los profesores eliminados.
+            </p>
+          </div>
+        )}
         
         <div className="rounded-md border overflow-x-auto">
           <Table>
@@ -352,12 +400,12 @@ export function ProfesoresTab() {
               {filteredProfesores.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                    No hay profesores registrados
+                    {showDeleted ? 'No hay profesores eliminados' : 'No hay profesores registrados'}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredProfesores.map((profesor) => (
-                  <TableRow key={profesor.id}>
+                  <TableRow key={profesor.id} className={showDeleted ? 'bg-red-50' : ''}>
                     <TableCell>{profesor.id}</TableCell>
                     <TableCell>{profesor.nombre}</TableCell>
                     <TableCell>{profesor.ci}</TableCell>
@@ -365,14 +413,22 @@ export function ProfesoresTab() {
                     <TableCell>{profesor.asignatura?.nombre || '-'}</TableCell>
                     <TableCell>{profesor.telefono || '-'}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(profesor)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(profesor.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
+                      {showDeleted ? (
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" title="Restaurar" onClick={() => handleRestore(profesor.id)}>
+                            <RotateCcw className="h-4 w-4 text-green-500" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(profesor)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDelete(profesor.id)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

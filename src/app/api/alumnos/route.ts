@@ -18,15 +18,28 @@ function getTursoClient() {
   })
 }
 
-// GET - List all alumnos
-export async function GET() {
+// GET - List all alumnos (activos por defecto, incluir eliminados con ?includeDeleted=true)
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+    const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+    
     const client = getTursoClient()
     
     if (!client) {
       // Fallback to Prisma for local development
       const { db } = await import('@/lib/db')
+      
+      const where: { activo?: boolean } = {}
+      if (!includeDeleted) {
+        where.activo = true
+      } else if (onlyDeleted) {
+        where.activo = false
+      }
+      
       const alumnos = await db.alumno.findMany({
+        where,
         orderBy: { numeroExpediente: 'asc' },
         include: {
           notas: {
@@ -38,9 +51,15 @@ export async function GET() {
     }
 
     // Turso production
-    const result = await client.execute(`
-      SELECT * FROM alumnos ORDER BY numeroExpediente ASC
-    `)
+    let sql = 'SELECT * FROM alumnos'
+    if (!includeDeleted) {
+      sql += ' WHERE activo = 1'
+    } else if (onlyDeleted) {
+      sql += ' WHERE activo = 0'
+    }
+    sql += ' ORDER BY numeroExpediente ASC'
+    
+    const result = await client.execute(sql)
 
     // Get notas for each alumno
     const alumnos = []
@@ -60,6 +79,7 @@ export async function GET() {
         tomaHuellaBiometrica: !!row.tomaHuellaBiometrica,
         entregaFoto: !!row.entregaFoto,
         disposicionCampoMisionero: !!row.disposicionCampoMisionero,
+        activo: row.activo === 1 || row.activo === true,
         notas: notasResult.rows.map(n => ({
           id: n.id,
           nota: n.nota,
@@ -128,8 +148,8 @@ export async function POST(request: NextRequest) {
       sql: `INSERT INTO alumnos (
         numeroExpediente, nombre, ci, telefono, email, pasaporte, direccion,
         genero, nombreIglesia, nombrePastor, tomaHuellaBiometrica, entregaFoto,
-        pagoCuotas, disposicionCampoMisionero, habilidades
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        pagoCuotas, disposicionCampoMisionero, habilidades, activo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       args: [
         parseInt(data.numeroExpediente),
         data.nombre,
@@ -161,6 +181,7 @@ export async function POST(request: NextRequest) {
       tomaHuellaBiometrica: !!newAlumno.rows[0]?.tomaHuellaBiometrica,
       entregaFoto: !!newAlumno.rows[0]?.entregaFoto,
       disposicionCampoMisionero: !!newAlumno.rows[0]?.disposicionCampoMisionero,
+      activo: true,
     }, { status: 201 })
   } catch (error: unknown) {
     console.error('Error creating alumno:', error)

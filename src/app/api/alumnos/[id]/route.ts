@@ -69,7 +69,7 @@ export async function PUT(
   }
 }
 
-// DELETE - Eliminar alumno
+// DELETE - Soft delete (marcar como inactivo)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -77,13 +77,50 @@ export async function DELETE(
   try {
     const { id } = await params
     const db = getDb()
-    await db.alumno.delete({
-      where: { id: parseInt(id) }
+    
+    // Soft delete: marcar como inactivo y guardar fecha de eliminación
+    const alumno = await db.alumno.update({
+      where: { id: parseInt(id) },
+      data: {
+        activo: false,
+        deletedAt: new Date()
+      }
     })
     
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Alumno eliminado correctamente. Puede restaurarlo desde la sección de eliminados.' 
+    })
   } catch (error) {
     console.error('Error deleting alumno:', error)
     return NextResponse.json({ error: 'Error al eliminar alumno' }, { status: 500 })
+  }
+}
+
+// PATCH - Restaurar alumno (marcar como activo)
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const db = getDb()
+    
+    const alumno = await db.alumno.update({
+      where: { id: parseInt(id) },
+      data: {
+        activo: true,
+        deletedAt: null
+      }
+    })
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Alumno restaurado correctamente',
+      alumno 
+    })
+  } catch (error) {
+    console.error('Error restoring alumno:', error)
+    return NextResponse.json({ error: 'Error al restaurar alumno' }, { status: 500 })
   }
 }

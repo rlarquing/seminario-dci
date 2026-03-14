@@ -18,26 +18,48 @@ function getTursoClient() {
   })
 }
 
-// GET - List all asignaturas
-export async function GET() {
+// GET - List all asignaturas (activas por defecto)
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+    const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+    
     const client = getTursoClient()
     
     if (!client) {
       // Fallback to Prisma for local development
       const { db } = await import('@/lib/db')
+      
+      const where: { activo?: boolean } = {}
+      if (!includeDeleted) {
+        where.activo = true
+      } else if (onlyDeleted) {
+        where.activo = false
+      }
+      
       const asignaturas = await db.asignatura.findMany({
+        where,
         orderBy: { id: 'asc' }
       })
       return NextResponse.json(asignaturas)
     }
 
     // Turso production
-    const result = await client.execute(`
-      SELECT * FROM asignaturas ORDER BY id ASC
-    `)
+    let sql = 'SELECT * FROM asignaturas'
+    if (!includeDeleted) {
+      sql += ' WHERE activo = 1'
+    } else if (onlyDeleted) {
+      sql += ' WHERE activo = 0'
+    }
+    sql += ' ORDER BY id ASC'
+    
+    const result = await client.execute(sql)
 
-    return NextResponse.json(result.rows)
+    return NextResponse.json(result.rows.map(row => ({
+      ...row,
+      activo: row.activo === 1 || row.activo === true
+    })))
   } catch (error) {
     console.error('Error fetching asignaturas:', error)
     return NextResponse.json({ 
@@ -75,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // Turso production
     const result = await client.execute({
-      sql: `INSERT INTO asignaturas (nombre, codigo) VALUES (?, ?)`,
+      sql: `INSERT INTO asignaturas (nombre, codigo, activo) VALUES (?, ?, 1)`,
       args: [data.nombre, data.codigo || null]
     })
 
@@ -84,7 +106,10 @@ export async function POST(request: NextRequest) {
       args: [result.lastInsertRowid as number]
     })
 
-    return NextResponse.json(newAsignatura.rows[0], { status: 201 })
+    return NextResponse.json({
+      ...newAsignatura.rows[0],
+      activo: true
+    }, { status: 201 })
   } catch (error: unknown) {
     console.error('Error creating asignatura:', error)
     return NextResponse.json({ 

@@ -197,10 +197,20 @@ export function CertificadosTab() {
       doc.setTextColor(0, 0, 0)
       doc.text(`Fecha de emisión: ${getCurrentDate()}`, 15, footerY)
       
+      // QR Code
+      try {
+        doc.addImage('/images/qr.png', 'PNG', 155, footerY - 5, 25, 25)
+      } catch {
+        console.log('Could not load QR')
+      }
+      
       // Signature area
-      doc.text('_________________________', 150, footerY + 20)
+      doc.text('_________________________', 140, footerY + 25)
       doc.setFontSize(8)
-      doc.text('Firma del Director', 150, footerY + 25)
+      doc.text('Firma del Director', 155, footerY + 30, { align: 'center' })
+      doc.setFontSize(7)
+      doc.setTextColor(100, 100, 100)
+      doc.text('Seminario DCI', 155, footerY + 35, { align: 'center' })
       
       doc.save(`certificado_${alumno.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('PDF generado correctamente')

@@ -1,12 +1,13 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { GraduationCap, Users, BookOpen, ClipboardList, FileText } from 'lucide-react'
+import { GraduationCap, Users, BookOpen, ClipboardList, FileText, FileBarChart } from 'lucide-react'
 import { AlumnosTab } from '@/components/alumnos-tab'
 import { ProfesoresTab } from '@/components/profesores-tab'
 import { AsignaturasTab } from '@/components/asignaturas-tab'
 import { NotasTab } from '@/components/notas-tab'
 import { CertificadosTab } from '@/components/certificados-tab'
+import { ReportesTab } from '@/components/reportes-tab'
 import Image from 'next/image'
 
 export default function Home() {
@@ -34,7 +35,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 container mx-auto px-4 py-6">
         <Tabs defaultValue="alumnos" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6 bg-white shadow-sm">
+          <TabsList className="grid w-full grid-cols-6 mb-6 bg-white shadow-sm">
             <TabsTrigger value="alumnos" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Alumnos</span>
@@ -54,6 +55,10 @@ export default function Home() {
             <TabsTrigger value="certificados" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Certificados</span>
+            </TabsTrigger>
+            <TabsTrigger value="reportes" className="flex items-center gap-2">
+              <FileBarChart className="h-4 w-4" />
+              <span className="hidden sm:inline">Reportes</span>
             </TabsTrigger>
           </TabsList>
 
@@ -75,6 +80,10 @@ export default function Home() {
 
           <TabsContent value="certificados">
             <CertificadosTab />
+          </TabsContent>
+
+          <TabsContent value="reportes">
+            <ReportesTab />
           </TabsContent>
         </Tabs>
       </main>

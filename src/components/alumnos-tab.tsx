@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Pencil, Trash2, Search, FileDown, Eye } from 'lucide-react'
+import { Plus, Pencil, Trash2, Search, FileDown, Eye, RotateCcw, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Alumno {
@@ -51,6 +51,8 @@ interface Alumno {
   pagoCuotas: string | null
   disposicionCampoMisionero: boolean
   habilidades: string | null
+  activo?: boolean
+  deletedAt?: string | null
   notas?: { nota: number | null; asignatura: { nombre: string } }[]
   promedio?: number | null
 }
@@ -82,14 +84,18 @@ export function AlumnosTab() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [viewingAlumno, setViewingAlumno] = useState<Alumno | null>(null)
   const [formData, setFormData] = useState(initialFormData)
+  const [showDeleted, setShowDeleted] = useState(false)
 
   useEffect(() => {
     fetchAlumnos()
   }, [])
 
-  const fetchAlumnos = async () => {
+  const fetchAlumnos = async (onlyDeleted = false) => {
     try {
-      const response = await fetch('/api/alumnos')
+      const url = onlyDeleted 
+        ? '/api/alumnos?onlyDeleted=true' 
+        : '/api/alumnos'
+      const response = await fetch(url)
       const data = await response.json()
       if (response.ok && Array.isArray(data)) {
         setAlumnos(data)
@@ -164,14 +170,36 @@ export function AlumnosTab() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de eliminar este alumno?')) return
+    if (!confirm('¿Está seguro de eliminar este alumno? El registro se moverá a la papelera y podrá ser restaurado.')) return
     
     try {
-      await fetch(`/api/alumnos/${id}`, { method: 'DELETE' })
-      toast.success('Alumno eliminado correctamente')
-      fetchAlumnos()
+      const response = await fetch(`/api/alumnos/${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (response.ok) {
+        toast.success(data.message || 'Alumno eliminado correctamente')
+        fetchAlumnos(showDeleted)
+      } else {
+        toast.error(data.error || 'Error al eliminar el alumno')
+      }
     } catch {
       toast.error('Error al eliminar el alumno')
+    }
+  }
+
+  const handleRestore = async (id: number) => {
+    if (!confirm('¿Está seguro de restaurar este alumno?')) return
+    
+    try {
+      const response = await fetch(`/api/alumnos/${id}`, { method: 'PATCH' })
+      const data = await response.json()
+      if (response.ok) {
+        toast.success(data.message || 'Alumno restaurado correctamente')
+        fetchAlumnos(true)
+      } else {
+        toast.error(data.error || 'Error al restaurar el alumno')
+      }
+    } catch {
+      toast.error('Error al restaurar el alumno')
     }
   }
 
@@ -203,13 +231,19 @@ export function AlumnosTab() {
       const doc = new jsPDF()
       
       // Header con Logo
-      doc.setFontSize(22)
+      try {
+        doc.addImage('/images/logo.png', 'PNG', 15, 8, 28, 28)
+      } catch {
+        console.log('No se pudo cargar el logo')
+      }
+      
+      doc.setFontSize(20)
       doc.setTextColor(185, 28, 28)
-      doc.text('SEMINARIO DCI', 105, 20, { align: 'center' })
+      doc.text('SEMINARIO DCI', 105, 18, { align: 'center' })
       
       doc.setFontSize(16)
       doc.setTextColor(0, 0, 0)
-      doc.text('EXPEDIENTE DEL ALUMNO', 105, 30, { align: 'center' })
+      doc.text('EXPEDIENTE DEL ALUMNO', 105, 28, { align: 'center' })
       
       // Línea separadora
       doc.setDrawColor(185, 28, 28)
@@ -328,7 +362,7 @@ export function AlumnosTab() {
         })
       }
       
-      // Footer
+      // Footer con QR y Firma
       const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY 
         ? (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20 
         : 220
@@ -341,11 +375,21 @@ export function AlumnosTab() {
         year: 'numeric'
       })}`, 15, footerY)
       
+      // QR Code
+      try {
+        doc.addImage('/images/qr.png', 'PNG', 155, footerY - 5, 25, 25)
+      } catch {
+        console.log('No se pudo cargar el QR')
+      }
+      
       // Firma
       doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', 150, footerY + 20)
+      doc.text('_________________________', 140, footerY + 25)
       doc.setFontSize(9)
-      doc.text('Firma del Director', 150, footerY + 25)
+      doc.text('Firma del Director', 155, footerY + 30, { align: 'center' })
+      doc.setFontSize(8)
+      doc.setTextColor(100, 100, 100)
+      doc.text('Seminario DCI', 155, footerY + 35, { align: 'center' })
       
       // Guardar
       doc.save(`expediente_${alumnoData.nombre.replace(/\s+/g, '_')}.pdf`)
@@ -543,8 +587,8 @@ export function AlumnosTab() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
-            <div className="relative">
+          <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Buscar por nombre, CI o expediente..."
@@ -553,7 +597,26 @@ export function AlumnosTab() {
                 className="pl-10"
               />
             </div>
+            <Button
+              variant={showDeleted ? "destructive" : "outline"}
+              size="sm"
+              onClick={() => {
+                setShowDeleted(!showDeleted)
+                fetchAlumnos(!showDeleted)
+              }}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              {showDeleted ? 'Ver Activos' : 'Ver Eliminados'}
+            </Button>
           </div>
+          
+          {showDeleted && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-700">
+                <strong>Papelera:</strong> Aquí puede ver y restaurar los alumnos eliminados.
+              </p>
+            </div>
+          )}
           
           <div className="rounded-md border overflow-x-auto">
             <Table>
@@ -572,12 +635,12 @@ export function AlumnosTab() {
                 {filteredAlumnos.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                      No hay alumnos registrados
+                      {showDeleted ? 'No hay alumnos eliminados' : 'No hay alumnos registrados'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredAlumnos.map((alumno) => (
-                    <TableRow key={alumno.id}>
+                    <TableRow key={alumno.id} className={showDeleted ? 'bg-red-50' : ''}>
                       <TableCell className="font-medium">{alumno.numeroExpediente}</TableCell>
                       <TableCell>{alumno.nombre}</TableCell>
                       <TableCell>{alumno.ci}</TableCell>
@@ -592,20 +655,31 @@ export function AlumnosTab() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" title="Ver Expediente" onClick={() => handleViewExpediente(alumno)}>
-                            <Eye className="h-4 w-4 text-blue-500" />
-                          </Button>
-                          <Button variant="ghost" size="icon" title="Exportar PDF" onClick={() => handleExportPDF(alumno)}>
-                            <FileDown className="h-4 w-4 text-green-500" />
-                          </Button>
-                          <Button variant="ghost" size="icon" title="Editar" onClick={() => handleEdit(alumno)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" title="Eliminar" onClick={() => handleDelete(alumno.id)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
+                        {showDeleted ? (
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" title="Ver Expediente" onClick={() => handleViewExpediente(alumno)}>
+                              <Eye className="h-4 w-4 text-blue-500" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Restaurar" onClick={() => handleRestore(alumno.id)}>
+                              <RotateCcw className="h-4 w-4 text-green-500" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" title="Ver Expediente" onClick={() => handleViewExpediente(alumno)}>
+                              <Eye className="h-4 w-4 text-blue-500" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Exportar PDF" onClick={() => handleExportPDF(alumno)}>
+                              <FileDown className="h-4 w-4 text-green-500" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Editar" onClick={() => handleEdit(alumno)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Eliminar" onClick={() => handleDelete(alumno.id)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
