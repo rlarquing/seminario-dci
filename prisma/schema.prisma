@@ -1,5 +1,5 @@
 // This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Works with both SQLite (local) and Turso (production via adapter)
 
 generator client {
   provider        = "prisma-client-js"
@@ -8,10 +8,9 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./db/custom.db"
 }
 
-// Tabla de Alumnos - Información personal
 model Alumno {
   id                        Int      @id @default(autoincrement())
   numeroExpediente          Int      @unique
@@ -37,7 +36,6 @@ model Alumno {
   @@map("alumnos")
 }
 
-// Tabla de Profesores
 model Profesor {
   id                    Int      @id @default(autoincrement())
   nombre                String
@@ -58,7 +56,6 @@ model Profesor {
   @@map("profesores")
 }
 
-// Tabla de Asignaturas
 model Asignatura {
   id          Int        @id @default(autoincrement())
   nombre      String
@@ -71,7 +68,6 @@ model Asignatura {
   @@map("asignaturas")
 }
 
-// Tabla de Notas
 model Nota {
   id           Int       @id @default(autoincrement())
   alumnoId     Int

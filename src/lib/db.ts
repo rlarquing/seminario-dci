@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { PrismaClient } from '@prisma/client'
 
-// Database configuration for both environments:
-// - DEVELOPMENT: Uses DATABASE_URL (SQLite local file)
-// - PRODUCTION (Vercel + Turso): Uses TURSO_DATABASE_URL + TURSO_AUTH_TOKEN
-
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
+// Check if we're in Turso production mode
+const isTursoProduction = 
+  (process.env.TURSO_DATABASE_URL?.startsWith('libsql://') || 
+   process.env.TURSO_DB_URL?.startsWith('libsql://')) && 
+  process.env.TURSO_AUTH_TOKEN
+
 function createPrismaClient(): PrismaClient {
-  // Check for Turso (Vercel production)
-  const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL
-  const tursoToken = process.env.TURSO_AUTH_TOKEN
-
-  if (tursoUrl?.startsWith('libsql://') && tursoToken) {
-    console.log('🔌 [PRODUCTION] Connecting to Turso:', tursoUrl)
-
-    // Dynamic require for Turso adapter (only loads when needed)
+  if (isTursoProduction) {
+    console.log('🔌 [PRODUCTION] Using Turso with Prisma adapter')
+    
     const { PrismaLibSql } = require('@prisma/adapter-libsql')
     const { createClient } = require('@libsql/client')
+
+    const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL
+    const tursoToken = process.env.TURSO_AUTH_TOKEN
 
     const libsql = createClient({
       url: tursoUrl,
@@ -31,10 +31,10 @@ function createPrismaClient(): PrismaClient {
       log: ['error'],
     })
   }
-
-  // Local SQLite (Development)
+  
+  // Local SQLite
   const databaseUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-  console.log('📁 [DEVELOPMENT] Connecting to SQLite:', databaseUrl)
+  console.log('📁 [DEVELOPMENT] Using SQLite:', databaseUrl)
 
   return new PrismaClient({
     datasources: {
@@ -44,14 +44,12 @@ function createPrismaClient(): PrismaClient {
   })
 }
 
-// Singleton pattern for PrismaClient
 let prisma: PrismaClient | undefined
 
 export function getDb(): PrismaClient {
   if (!prisma) {
     prisma = globalForPrisma.prisma || createPrismaClient()
 
-    // Save to global in development to prevent hot-reload issues
     if (process.env.NODE_ENV !== 'production') {
       globalForPrisma.prisma = prisma
     }
@@ -60,5 +58,4 @@ export function getDb(): PrismaClient {
   return prisma
 }
 
-// Export singleton instance
 export const db = getDb()
