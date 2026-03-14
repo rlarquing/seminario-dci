@@ -13,18 +13,37 @@ const ASIGNATURAS_INICIALES = [
   { nombre: 'Doctrinas Bíblicas', codigo: 'DBI-101' },
 ]
 
+// GET - Show current config
+export async function GET() {
+  const tursoUrl = process.env.TURSO_DATABASE_URL
+  const tursoToken = process.env.TURSO_AUTH_TOKEN
+  const databaseUrl = process.env.DATABASE_URL
+
+  return NextResponse.json({
+    message: 'Database Initializer - Seminario DCI',
+    config: {
+      TURSO_DATABASE_URL: tursoUrl ? '✓ Configured' : '✗ Not configured',
+      TURSO_AUTH_TOKEN: tursoToken ? '✓ Configured' : '✗ Not configured',
+      DATABASE_URL: databaseUrl ? '✓ Configured' : '✗ Not configured',
+    },
+    mode: tursoUrl?.startsWith('libsql://') && tursoToken ? 'Turso (Production)' : 'SQLite Local (Development)',
+    instructions: {
+      init: 'POST /api/init-db - Creates tables and initial data',
+      curl: 'curl -X POST https://seminario-dci.vercel.app/api/init-db'
+    }
+  })
+}
+
+// POST - Initialize database
 export async function POST() {
   try {
-    // Check for Turso
-    const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL
+    const tursoUrl = process.env.TURSO_DATABASE_URL
     const tursoToken = process.env.TURSO_AUTH_TOKEN
-    const isTurso = tursoUrl?.startsWith('libsql://') && tursoToken
 
-    if (isTurso) {
+    if (tursoUrl?.startsWith('libsql://') && tursoToken) {
       console.log('🔌 Initializing Turso database...')
 
       const { createClient } = require('@libsql/client')
-
       const client = createClient({
         url: tursoUrl,
         authToken: tursoToken,
@@ -33,6 +52,7 @@ export async function POST() {
       // Create tables
       console.log('Creating tables in Turso...')
 
+      // Alumnos table
       await client.execute(`
         CREATE TABLE IF NOT EXISTS alumnos (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,6 +76,7 @@ export async function POST() {
         )
       `)
 
+      // Asignaturas table
       await client.execute(`
         CREATE TABLE IF NOT EXISTS asignaturas (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,6 +87,7 @@ export async function POST() {
         )
       `)
 
+      // Profesores table
       await client.execute(`
         CREATE TABLE IF NOT EXISTS profesores (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,23 +100,21 @@ export async function POST() {
           nombrePastor TEXT,
           tomaHuellaBiometrica INTEGER DEFAULT 0,
           entregaFoto INTEGER DEFAULT 0,
-          asignaturaId INTEGER,
+          asignaturaId INTEGER REFERENCES asignaturas(id),
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id)
+          updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `)
 
+      // Notas table
       await client.execute(`
         CREATE TABLE IF NOT EXISTS notas (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          alumnoId INTEGER NOT NULL,
-          asignaturaId INTEGER NOT NULL,
+          alumnoId INTEGER NOT NULL REFERENCES alumnos(id) ON DELETE CASCADE,
+          asignaturaId INTEGER NOT NULL REFERENCES asignaturas(id) ON DELETE CASCADE,
           nota REAL,
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (alumnoId) REFERENCES alumnos(id) ON DELETE CASCADE,
-          FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id) ON DELETE CASCADE,
           UNIQUE(alumnoId, asignaturaId)
         )
       `)
@@ -123,8 +143,7 @@ export async function POST() {
 
     // Local SQLite - use Prisma
     console.log('Initializing local SQLite with Prisma...')
-    const { getDb } = await import('@/lib/db')
-    const db = getDb()
+    const { db } = await import('@/lib/db')
 
     // Insert subjects if not exist
     for (const asignatura of ASIGNATURAS_INICIALES) {
@@ -154,29 +173,9 @@ export async function POST() {
       {
         success: false,
         error: 'Error initializing database',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        env: {
-          TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL ? 'Set' : 'Not set',
-          TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ? 'Set' : 'Not set',
-          DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set'
-        }
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )
   }
-}
-
-export async function GET() {
-  return NextResponse.json({
-    message: 'Database Initializer - Seminario DCI',
-    environment: {
-      TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL ? '✓ Configured' : '✗ Not configured',
-      TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ? '✓ Configured' : '✗ Not configured',
-      DATABASE_URL: process.env.DATABASE_URL ? '✓ Configured' : '✗ Not configured'
-    },
-    instructions: {
-      init: 'POST /api/init-db - Creates tables and initial data',
-      curl: 'curl -X POST https://seminario-dci.vercel.app/api/init-db'
-    }
-  })
 }

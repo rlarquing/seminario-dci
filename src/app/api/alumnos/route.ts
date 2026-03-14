@@ -1,76 +1,186 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import type { NextRequest } from 'next/server'
 
-// GET - Listar todos los alumnos
+// Direct Turso client for production
+function getTursoClient() {
+  const tursoUrl = process.env.TURSO_DATABASE_URL
+  const tursoToken = process.env.TURSO_AUTH_TOKEN
+
+  if (!tursoUrl || !tursoToken) {
+    return null
+  }
+
+  const { createClient } = require('@libsql/client')
+  return createClient({
+    url: tursoUrl,
+    authToken: tursoToken,
+  })
+}
+
+// GET - List all alumnos
 export async function GET() {
   try {
-    const db = getDb()
-    const alumnos = await db.alumno.findMany({
-      orderBy: { numeroExpediente: 'asc' },
-      include: {
-        notas: {
-          include: {
-            asignatura: true
+    const client = getTursoClient()
+    
+    if (!client) {
+      // Fallback to Prisma for local development
+      const { db } = await import('@/lib/db')
+      const alumnos = await db.alumno.findMany({
+        orderBy: { numeroExpediente: 'asc' },
+        include: {
+          notas: {
+            include: { asignatura: true }
           }
         }
-      }
-    })
+      })
+      return NextResponse.json(alumnos)
+    }
+
+    // Turso production
+    const result = await client.execute(`
+      SELECT * FROM alumnos ORDER BY numeroExpediente ASC
+    `)
+
+    // Get notas for each alumno
+    const alumnos = []
+    for (const row of result.rows) {
+      const notasResult = await client.execute({
+        sql: `
+          SELECT n.id, n.nota, n.asignaturaId, a.nombre as asignaturaNombre, a.codigo as asignaturaCodigo
+          FROM notas n
+          JOIN asignaturas a ON n.asignaturaId = a.id
+          WHERE n.alumnoId = ?
+        `,
+        args: [row.id as number]
+      })
+
+      alumnos.push({
+        ...row,
+        tomaHuellaBiometrica: !!row.tomaHuellaBiometrica,
+        entregaFoto: !!row.entregaFoto,
+        disposicionCampoMisionero: !!row.disposicionCampoMisionero,
+        notas: notasResult.rows.map(n => ({
+          id: n.id,
+          nota: n.nota,
+          asignaturaId: n.asignaturaId,
+          asignatura: {
+            id: n.asignaturaId,
+            nombre: n.asignaturaNombre,
+            codigo: n.asignaturaCodigo
+          }
+        }))
+      })
+    }
+
     return NextResponse.json(alumnos)
   } catch (error) {
     console.error('Error fetching alumnos:', error)
-    return NextResponse.json({ error: 'Error al obtener alumnos' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Error al obtener alumnos',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-// POST - Crear nuevo alumno
-export async function POST(request: Request) {
+// POST - Create new alumno
+export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
-    const db = getDb()
     
-    // Validar campos requeridos
+    // Validate required fields
     if (!data.numeroExpediente || !data.nombre || !data.ci) {
       return NextResponse.json(
         { error: 'Los campos No. Expediente, Nombre y Carnet de Identidad son obligatorios' },
         { status: 400 }
       )
     }
+
+    const client = getTursoClient()
     
-    const alumno = await db.alumno.create({
-      data: {
-        numeroExpediente: parseInt(data.numeroExpediente),
-        nombre: data.nombre,
-        ci: data.ci,
-        telefono: data.telefono || null,
-        email: data.email || null,
-        pasaporte: data.pasaporte || null,
-        direccion: data.direccion || null,
-        genero: data.genero || null,
-        nombreIglesia: data.nombreIglesia || null,
-        nombrePastor: data.nombrePastor || null,
-        tomaHuellaBiometrica: data.tomaHuellaBiometrica || false,
-        entregaFoto: data.entregaFoto || false,
-        pagoCuotas: data.pagoCuotas || null,
-        disposicionCampoMisionero: data.disposicionCampoMisionero || false,
-        habilidades: data.habilidades || null,
-      }
+    if (!client) {
+      // Fallback to Prisma for local development
+      const { db } = await import('@/lib/db')
+      const alumno = await db.alumno.create({
+        data: {
+          numeroExpediente: parseInt(data.numeroExpediente),
+          nombre: data.nombre,
+          ci: data.ci,
+          telefono: data.telefono || null,
+          email: data.email || null,
+          pasaporte: data.pasaporte || null,
+          direccion: data.direccion || null,
+          genero: data.genero || null,
+          nombreIglesia: data.nombreIglesia || null,
+          nombrePastor: data.nombrePastor || null,
+          tomaHuellaBiometrica: data.tomaHuellaBiometrica || false,
+          entregaFoto: data.entregaFoto || false,
+          pagoCuotas: data.pagoCuotas || null,
+          disposicionCampoMisionero: data.disposicionCampoMisionero || false,
+          habilidades: data.habilidades || null,
+        }
+      })
+      return NextResponse.json(alumno, { status: 201 })
+    }
+
+    // Turso production
+    const result = await client.execute({
+      sql: `INSERT INTO alumnos (
+        numeroExpediente, nombre, ci, telefono, email, pasaporte, direccion,
+        genero, nombreIglesia, nombrePastor, tomaHuellaBiometrica, entregaFoto,
+        pagoCuotas, disposicionCampoMisionero, habilidades
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        parseInt(data.numeroExpediente),
+        data.nombre,
+        data.ci,
+        data.telefono || null,
+        data.email || null,
+        data.pasaporte || null,
+        data.direccion || null,
+        data.genero || null,
+        data.nombreIglesia || null,
+        data.nombrePastor || null,
+        data.tomaHuellaBiometrica ? 1 : 0,
+        data.entregaFoto ? 1 : 0,
+        data.pagoCuotas || null,
+        data.disposicionCampoMisionero ? 1 : 0,
+        data.habilidades || null,
+      ]
     })
-    
-    return NextResponse.json(alumno, { status: 201 })
-  } catch (error: any) {
+
+    // Get the inserted row
+    const newAlumno = await client.execute({
+      sql: 'SELECT * FROM alumnos WHERE id = ?',
+      args: [result.lastInsertRowid as number]
+    })
+
+    return NextResponse.json({
+      id: result.lastInsertRowid,
+      ...newAlumno.rows[0],
+      tomaHuellaBiometrica: !!newAlumno.rows[0]?.tomaHuellaBiometrica,
+      entregaFoto: !!newAlumno.rows[0]?.entregaFoto,
+      disposicionCampoMisionero: !!newAlumno.rows[0]?.disposicionCampoMisionero,
+    }, { status: 201 })
+  } catch (error: unknown) {
     console.error('Error creating alumno:', error)
     
-    // Manejar errores de unicidad
-    if (error.code === 'P2002') {
-      const message = error.meta?.target?.includes('numeroExpediente')
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode = (error as { code?: string })?.code
+    
+    if (errorCode === 'SQLITE_CONSTRAINT_UNIQUE' || errorMessage.includes('UNIQUE constraint')) {
+      const message = errorMessage.includes('numeroExpediente')
         ? 'Ya existe un alumno con ese número de expediente'
-        : error.meta?.target?.includes('ci')
+        : errorMessage.includes('ci')
         ? 'Ya existe un alumno con ese carnet de identidad'
         : 'Ya existe un alumno con esos datos'
       
       return NextResponse.json({ error: message }, { status: 409 })
     }
     
-    return NextResponse.json({ error: 'Error al crear alumno' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Error al crear alumno',
+      details: errorMessage
+    }, { status: 500 })
   }
 }

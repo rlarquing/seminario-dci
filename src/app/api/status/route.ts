@@ -1,9 +1,8 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
 
 export async function GET() {
-  // Check all possible database variables
-  const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_DB_URL
+  const tursoUrl = process.env.TURSO_DATABASE_URL
   const tursoToken = process.env.TURSO_AUTH_TOKEN
   const databaseUrl = process.env.DATABASE_URL
 
@@ -34,22 +33,47 @@ export async function GET() {
   }
 
   try {
-    const db = getDb()
+    // Try Turso first (production)
+    if (tursoUrl?.startsWith('libsql://') && tursoToken) {
+      const { createClient } = require('@libsql/client')
+      const client = createClient({
+        url: tursoUrl,
+        authToken: tursoToken,
+      })
 
-    // Test connection by counting records
-    const [alumnosCount, profesoresCount, asignaturasCount, notasCount] = await Promise.all([
-      db.alumno.count(),
-      db.profesor.count(),
-      db.asignatura.count(),
-      db.nota.count()
-    ])
+      // Count records in each table
+      const [alumnos, profesores, asignaturas, notas] = await Promise.all([
+        client.execute('SELECT COUNT(*) as count FROM alumnos'),
+        client.execute('SELECT COUNT(*) as count FROM profesores'),
+        client.execute('SELECT COUNT(*) as count FROM asignaturas'),
+        client.execute('SELECT COUNT(*) as count FROM notas'),
+      ])
 
-    status.connection = 'connected'
-    status.tables = {
-      alumnos: alumnosCount,
-      profesores: profesoresCount,
-      asignaturas: asignaturasCount,
-      notas: notasCount
+      status.connection = 'connected'
+      status.tables = {
+        alumnos: alumnos.rows[0]?.count as number || 0,
+        profesores: profesores.rows[0]?.count as number || 0,
+        asignaturas: asignaturas.rows[0]?.count as number || 0,
+        notas: notas.rows[0]?.count as number || 0,
+      }
+    } else {
+      // Local development with Prisma
+      const { db } = await import('@/lib/db')
+      
+      const [alumnosCount, profesoresCount, asignaturasCount, notasCount] = await Promise.all([
+        db.alumno.count(),
+        db.profesor.count(),
+        db.asignatura.count(),
+        db.nota.count(),
+      ])
+
+      status.connection = 'connected'
+      status.tables = {
+        alumnos: alumnosCount,
+        profesores: profesoresCount,
+        asignaturas: asignaturasCount,
+        notas: notasCount,
+      }
     }
   } catch (error) {
     status.connection = 'error'
