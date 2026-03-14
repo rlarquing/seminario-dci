@@ -9,6 +9,7 @@ generator client {
 datasource db {
   provider  = "sqlite"
   url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // Tabla de Alumnos - Información personal (según Excel)

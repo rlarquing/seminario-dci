@@ -1,54 +1,48 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
-import path from 'path'
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 function createPrismaClient() {
-  // Check if using Turso (libsql:// URL)
-  const tursoDatabaseUrl = process.env.TURSO_DATABASE_URL
+  // Turso configuration (Vercel production)
+  const tursoUrl = process.env.TURSO_DATABASE_URL
+  const tursoToken = process.env.TURSO_AUTH_TOKEN
   
-  if (tursoDatabaseUrl?.startsWith('libsql://')) {
-    // Turso configuration
+  // Check for Turso first (Vercel sets TURSO_DATABASE_URL automatically)
+  if (tursoUrl?.startsWith('libsql://') && tursoToken) {
+    console.log('🔌 Connecting to Turso:', tursoUrl)
+    
     const libsql = createClient({
-      url: tursoDatabaseUrl,
-      authToken: process.env.TURSO_AUTH_TOKEN,
+      url: tursoUrl,
+      authToken: tursoToken,
     })
     
-    const adapter = new PrismaLibSql(libsql)
+    const adapter = new PrismaLibSQL(libsql)
     
     return new PrismaClient({
       adapter,
-      log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     })
   }
   
-  // Local SQLite configuration - use DATABASE_URL if provided
-  let databaseUrl = process.env.DATABASE_URL
-  
-  // Convert relative file path to absolute path with forward slashes for cross-platform compatibility
-  if (databaseUrl?.startsWith('file:./')) {
-    const relativePath = databaseUrl.replace('file:', '')
-    const absolutePath = path.resolve(relativePath)
-    // Normalize to forward slashes for SQLite URL compatibility on all platforms
-    const normalizedPath = absolutePath.replace(/\\/g, '/')
-    databaseUrl = `file:${normalizedPath}`
-  }
+  // Local SQLite configuration
+  const databaseUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
+  console.log('📁 Connecting to SQLite:', databaseUrl)
   
   return new PrismaClient({
     datasources: {
       db: {
-        url: databaseUrl || `file:${path.resolve('./prisma/custom.db').replace(/\\/g, '/')}`,
+        url: databaseUrl,
       },
     },
-    log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 }
 
-let prisma: PrismaClient
+let prisma: PrismaClient | undefined
 
-export function getDb() {
+export function getDb(): PrismaClient {
   if (!prisma) {
     prisma = globalForPrisma.prisma || createPrismaClient()
     if (process.env.NODE_ENV !== 'production') {
@@ -58,5 +52,5 @@ export function getDb() {
   return prisma
 }
 
-// For backwards compatibility, but new code should use getDb()
+// Export for convenience
 export const db = getDb()

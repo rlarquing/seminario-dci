@@ -15,35 +15,27 @@ const ASIGNATURAS_INICIALES = [
 
 export async function POST() {
   try {
-    // Verificar si estamos usando Turso o SQLite local
-    const isTurso = process.env.TURSO_DATABASE_URL?.startsWith('libsql://')
+    const tursoUrl = process.env.TURSO_DATABASE_URL
+    const tursoToken = process.env.TURSO_AUTH_TOKEN
+    const databaseUrl = process.env.DATABASE_URL
+    
+    // Determine database type
+    const isTurso = tursoUrl?.startsWith('libsql://') && tursoToken
     
     if (isTurso) {
-      // Modo Turso - usar cliente directo de libsql
+      // Turso - use libsql client directly to create tables
       const { createClient } = await import('@libsql/client')
-      const databaseUrl = process.env.TURSO_DATABASE_URL!
-      const authToken = process.env.TURSO_AUTH_TOKEN
       
-      if (!authToken) {
-        return NextResponse.json(
-          {
-            error: 'Falta configurar TURSO_AUTH_TOKEN en Vercel',
-            ayuda: 'Ve a Settings → Environment Variables y agrega TURSO_AUTH_TOKEN con tu token de Turso'
-          },
-          { status: 400 }
-        )
-      }
-
       const client = createClient({
-        url: databaseUrl,
-        authToken: authToken,
+        url: tursoUrl!,
+        authToken: tursoToken!,
       })
 
-      // Crear las tablas
-      console.log('Creando tablas en Turso...')
+      // Create tables
+      console.log('Creating tables in Turso...')
       
-      const sqlStatements = [
-        `CREATE TABLE IF NOT EXISTS alumnos (
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS alumnos (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           numeroExpediente INTEGER NOT NULL UNIQUE,
           nombre TEXT NOT NULL,
@@ -62,15 +54,21 @@ export async function POST() {
           habilidades TEXT,
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
-        `CREATE TABLE IF NOT EXISTS asignaturas (
+        )
+      `)
+
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS asignaturas (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nombre TEXT NOT NULL,
           codigo TEXT UNIQUE,
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
-        `CREATE TABLE IF NOT EXISTS profesores (
+        )
+      `)
+
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS profesores (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           nombre TEXT NOT NULL,
           ci TEXT NOT NULL,
@@ -85,8 +83,11 @@ export async function POST() {
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id)
-        )`,
-        `CREATE TABLE IF NOT EXISTS notas (
+        )
+      `)
+
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS notas (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           alumnoId INTEGER NOT NULL,
           asignaturaId INTEGER NOT NULL,
@@ -94,19 +95,15 @@ export async function POST() {
           createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (alumnoId) REFERENCES alumnos(id) ON DELETE CASCADE,
-          FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id),
+          FOREIGN KEY (asignaturaId) REFERENCES asignaturas(id) ON DELETE CASCADE,
           UNIQUE(alumnoId, asignaturaId)
-        )`
-      ]
-      
-      for (const sql of sqlStatements) {
-        await client.execute({ sql })
-      }
-      
-      console.log('Tablas creadas correctamente en Turso')
+        )
+      `)
 
-      // Insertar asignaturas iniciales si no existen
-      console.log('Insertando asignaturas iniciales en Turso...')
+      console.log('Tables created in Turso')
+
+      // Insert initial subjects
+      console.log('Inserting subjects in Turso...')
       for (const asignatura of ASIGNATURAS_INICIALES) {
         await client.execute({
           sql: 'INSERT OR IGNORE INTO asignaturas (nombre, codigo) VALUES (?, ?)',
@@ -114,75 +111,59 @@ export async function POST() {
         })
       }
 
-      // Verificar las asignaturas insertadas
-      const result = await client.execute('SELECT * FROM asignaturas')
-      
+      const result = await client.execute('SELECT * FROM asignaturas ORDER BY id')
+
       return NextResponse.json({
         success: true,
-        message: 'Base de datos Turso inicializada correctamente',
-        tablas: ['alumnos', 'asignaturas', 'profesores', 'notas'],
-        asignaturas: result.rows,
-        instrucciones: 'La base de datos Turso está lista. Ahora puedes usar la aplicación normalmente.'
-      })
-    } else {
-      // Modo SQLite local - usar Prisma
-      // Verificar que hay base de datos configurada
-      const databaseUrl = process.env.DATABASE_URL
-      if (!databaseUrl) {
-        return NextResponse.json(
-          {
-            error: 'Falta configurar DATABASE_URL para desarrollo local',
-            ayuda: 'Crea un archivo .env con: DATABASE_URL="file:./prisma/custom.db"'
-          },
-          { status: 400 }
-        )
-      }
-
-      // Usar Prisma para crear las tablas (ya están gestionadas por Prisma migrate/db push)
-      // Solo insertar asignaturas iniciales si no existen
-      console.log('Inicializando datos en SQLite local...')
-      
-      const db = getDb()
-      
-      // Verificar si ya hay asignaturas
-      const existingAsignaturas = await db.asignatura.findMany()
-      
-      if (existingAsignaturas.length === 0) {
-        // Insertar asignaturas iniciales
-        for (const asignatura of ASIGNATURAS_INICIALES) {
-          await db.asignatura.create({
-            data: {
-              nombre: asignatura.nombre,
-              codigo: asignatura.codigo,
-            }
-          })
-        }
-        console.log('Asignaturas iniciales insertadas en SQLite local')
-      } else {
-        console.log(`Ya existen ${existingAsignaturas.length} asignaturas en la base de datos`)
-      }
-
-      // Obtener todas las asignaturas
-      const allAsignaturas = await db.asignatura.findMany({
-        orderBy: { id: 'asc' }
-      })
-      
-      return NextResponse.json({
-        success: true,
-        message: 'Base de datos SQLite local inicializada correctamente',
-        tablas: ['alumnos', 'asignaturas', 'profesores', 'notas'],
-        asignaturas: allAsignaturas,
-        instrucciones: 'La base de datos local está lista. Ahora puedes usar la aplicación normalmente.',
-        nota: 'Las tablas deben crearse previamente con: npm run db:push'
+        message: 'Turso database initialized successfully',
+        database: {
+          type: 'Turso',
+          url: tursoUrl
+        },
+        tables: ['alumnos', 'asignaturas', 'profesores', 'notas'],
+        subjectsCreated: result.rows.length,
+        subjects: result.rows
       })
     }
+
+    // SQLite Local - use Prisma
+    console.log('Initializing local SQLite...')
+    const db = getDb()
     
+    // Insert subjects if not exist
+    for (const asignatura of ASIGNATURAS_INICIALES) {
+      await db.asignatura.upsert({
+        where: { codigo: asignatura.codigo },
+        create: asignatura,
+        update: asignatura
+      })
+    }
+
+    const asignaturas = await db.asignatura.findMany({ orderBy: { id: 'asc' } })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Local SQLite database initialized successfully',
+      database: {
+        type: 'SQLite Local',
+        url: databaseUrl || 'file:./db/custom.db'
+      },
+      subjectsCreated: asignaturas.length,
+      subjects: asignaturas
+    })
+
   } catch (error) {
-    console.error('Error inicializando base de datos:', error)
+    console.error('Error initializing database:', error)
     return NextResponse.json(
       {
-        error: 'Error al inicializar la base de datos',
-        details: error instanceof Error ? error.message : 'Error desconocido'
+        success: false,
+        error: 'Error initializing database',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        config: {
+          TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL ? 'Set' : 'Not set',
+          TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ? 'Set' : 'Not set',
+          DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set'
+        }
       },
       { status: 500 }
     )
@@ -191,12 +172,15 @@ export async function POST() {
 
 export async function GET() {
   return NextResponse.json({
-    message: 'Usa POST para inicializar la base de datos',
-    endpoint: 'POST /api/init-db',
-    instrucciones: 'Este endpoint funciona tanto para SQLite local como para Turso. Para Turso configura TURSO_DATABASE_URL y TURSO_AUTH_TOKEN. Para local configura DATABASE_URL y ejecuta primero: npm run db:push',
-    modos: {
-      local: 'DATABASE_URL + npm run db:push + POST /api/init-db',
-      turso: 'TURSO_DATABASE_URL + TURSO_AUTH_TOKEN + POST /api/init-db'
+    message: 'Database Initializer - Seminario DCI',
+    config: {
+      TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL ? '✓ Configured' : '✗ Not configured',
+      TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ? '✓ Configured' : '✗ Not configured',
+      DATABASE_URL: process.env.DATABASE_URL ? '✓ Configured' : '✗ Not configured'
+    },
+    instructions: {
+      init: 'POST /api/init-db - Creates tables and initial data',
+      curl: 'curl -X POST https://your-app.vercel.app/api/init-db'
     }
   })
 }
