@@ -14,24 +14,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "Seminario DCI - Sistema de Gestión Académica",
+  description: "Sistema integral de gestión académica para el Seminario DCI. Administración de alumnos, profesores, asignaturas, calificaciones y generación de certificados.",
+  keywords: ["Seminario DCI", "Gestión Académica", "Educación", "Certificados", "Alumnos", "Profesores", "Notas"],
+  authors: [{ name: "Seminario DCI" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: [
+      { url: "/images/logo.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [
+      { url: "/images/logo.png", type: "image/png", sizes: "180x180" },
+    ],
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "Seminario DCI - Sistema de Gestión Académica",
+    description: "Sistema integral de gestión académica para el Seminario DCI",
+    url: "https://seminario-dci.vercel.app",
+    siteName: "Seminario DCI",
     type: "website",
+    images: [
+      {
+        url: "/images/logo.png",
+        width: 512,
+        height: 512,
+        alt: "Logo Seminario DCI",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "Seminario DCI - Sistema de Gestión Académica",
+    description: "Sistema integral de gestión académica para el Seminario DCI",
+    images: ["/images/logo.png"],
   },
 };
 
@@ -41,7 +55,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/images/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/images/logo.png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
