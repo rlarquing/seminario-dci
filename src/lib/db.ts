@@ -1,56 +1,33 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSQL } from '@prisma/adapter-libsql'
-import { createClient } from '@libsql/client'
+
+// Simple SQLite connection for development
+// For production with Turso, set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-function createPrismaClient() {
-  // Turso configuration (Vercel production)
-  const tursoUrl = process.env.TURSO_DATABASE_URL
-  const tursoToken = process.env.TURSO_AUTH_TOKEN
-  
-  // Check for Turso first (Vercel sets TURSO_DATABASE_URL automatically)
-  if (tursoUrl?.startsWith('libsql://') && tursoToken) {
-    console.log('🔌 Connecting to Turso:', tursoUrl)
-    
-    const libsql = createClient({
-      url: tursoUrl,
-      authToken: tursoToken,
-    })
-    
-    const adapter = new PrismaLibSQL(libsql)
-    
-    return new PrismaClient({
-      adapter,
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    })
-  }
-  
-  // Local SQLite configuration
-  const databaseUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-  console.log('📁 Connecting to SQLite:', databaseUrl)
-  
-  return new PrismaClient({
+const databaseUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
+
+// Create PrismaClient instance
+let prisma: PrismaClient
+
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient({
     datasources: {
-      db: {
-        url: databaseUrl,
-      },
+      db: { url: databaseUrl },
     },
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: ['error'],
   })
-}
-
-let prisma: PrismaClient | undefined
-
-export function getDb(): PrismaClient {
-  if (!prisma) {
-    prisma = globalForPrisma.prisma || createPrismaClient()
-    if (process.env.NODE_ENV !== 'production') {
-      globalForPrisma.prisma = prisma
-    }
+} else {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({
+      datasources: {
+        db: { url: databaseUrl },
+      },
+      log: ['query', 'error', 'warn'],
+    })
   }
-  return prisma
+  prisma = globalForPrisma.prisma
 }
 
-// Export for convenience
-export const db = getDb()
+export const db = prisma
+export function getDb() { return db }

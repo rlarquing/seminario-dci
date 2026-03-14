@@ -15,15 +15,13 @@ const ASIGNATURAS_INICIALES = [
 
 export async function POST() {
   try {
+    // Detect environment
     const tursoUrl = process.env.TURSO_DATABASE_URL
     const tursoToken = process.env.TURSO_AUTH_TOKEN
-    const databaseUrl = process.env.DATABASE_URL
-    
-    // Determine database type
     const isTurso = tursoUrl?.startsWith('libsql://') && tursoToken
     
+    // For Turso, we need to create tables with raw SQL
     if (isTurso) {
-      // Turso - use libsql client directly to create tables
       const { createClient } = await import('@libsql/client')
       
       const client = createClient({
@@ -31,9 +29,9 @@ export async function POST() {
         authToken: tursoToken!,
       })
 
-      // Create tables
       console.log('Creating tables in Turso...')
       
+      // Create tables
       await client.execute(`
         CREATE TABLE IF NOT EXISTS alumnos (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,10 +98,9 @@ export async function POST() {
         )
       `)
 
-      console.log('Tables created in Turso')
+      console.log('Tables created, inserting subjects...')
 
-      // Insert initial subjects
-      console.log('Inserting subjects in Turso...')
+      // Insert subjects
       for (const asignatura of ASIGNATURAS_INICIALES) {
         await client.execute({
           sql: 'INSERT OR IGNORE INTO asignaturas (nombre, codigo) VALUES (?, ?)',
@@ -115,19 +112,16 @@ export async function POST() {
 
       return NextResponse.json({
         success: true,
-        message: 'Turso database initialized successfully',
-        database: {
-          type: 'Turso',
-          url: tursoUrl
-        },
+        message: 'Turso database initialized successfully!',
+        database: { type: 'Turso', url: tursoUrl },
         tables: ['alumnos', 'asignaturas', 'profesores', 'notas'],
         subjectsCreated: result.rows.length,
         subjects: result.rows
       })
     }
 
-    // SQLite Local - use Prisma
-    console.log('Initializing local SQLite...')
+    // Local SQLite - use Prisma
+    console.log('Initializing local SQLite with Prisma...')
     const db = getDb()
     
     // Insert subjects if not exist
@@ -143,10 +137,10 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: 'Local SQLite database initialized successfully',
-      database: {
-        type: 'SQLite Local',
-        url: databaseUrl || 'file:./db/custom.db'
+      message: 'Local SQLite database initialized successfully!',
+      database: { 
+        type: 'SQLite Local', 
+        url: process.env.DATABASE_URL || 'file:./db/custom.db' 
       },
       subjectsCreated: asignaturas.length,
       subjects: asignaturas
@@ -159,7 +153,7 @@ export async function POST() {
         success: false,
         error: 'Error initializing database',
         details: error instanceof Error ? error.message : 'Unknown error',
-        config: {
+        env: {
           TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL ? 'Set' : 'Not set',
           TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ? 'Set' : 'Not set',
           DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set'
@@ -173,7 +167,7 @@ export async function POST() {
 export async function GET() {
   return NextResponse.json({
     message: 'Database Initializer - Seminario DCI',
-    config: {
+    environment: {
       TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL ? '✓ Configured' : '✗ Not configured',
       TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN ? '✓ Configured' : '✗ Not configured',
       DATABASE_URL: process.env.DATABASE_URL ? '✓ Configured' : '✗ Not configured'

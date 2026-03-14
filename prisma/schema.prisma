@@ -2,34 +2,32 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "sqlite"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-// Tabla de Alumnos - Información personal (según Excel)
+// Tabla de Alumnos - Información personal
 model Alumno {
   id                        Int      @id @default(autoincrement())
-  numeroExpediente          Int      @unique  // No Expediente
-  nombre                    String   // Nombre y Apellidos
-  ci                        String   @unique  // C- Identidad
+  numeroExpediente          Int      @unique
+  nombre                    String
+  ci                        String   @unique
   telefono                  String?
   email                     String?
-  pasaporte                 String?  // No Pasporte
-  direccion                 String?  // Dirección particular
-  genero                    String?  // Sexo (M/F)
-  nombreIglesia             String?  // Nombre de la Iglesia y Dirección
-  nombrePastor              String?  // Nombre del Pastor
-  tomaHuellaBiometrica      Boolean  @default(false)  // Toma de huella biométricas
-  entregaFoto               Boolean  @default(false)  // Entrega de foto
-  pagoCuotas                String?  // Pago de Cuotas por meses
-  disposicionCampoMisionero Boolean  @default(false)  // Campo misionero
-  habilidades               String?  // Habilidades
+  pasaporte                 String?
+  direccion                 String?
+  genero                    String?
+  nombreIglesia             String?
+  nombrePastor              String?
+  tomaHuellaBiometrica      Boolean  @default(false)
+  entregaFoto               Boolean  @default(false)
+  pagoCuotas                String?
+  disposicionCampoMisionero Boolean  @default(false)
+  habilidades               String?
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
 
@@ -38,16 +36,16 @@ model Alumno {
   @@map("alumnos")
 }
 
-// Tabla de Profesores (según Excel)
+// Tabla de Profesores
 model Profesor {
   id                    Int      @id @default(autoincrement())
-  nombre                String   // Nombre y Apellidos
-  ci                    String   // C- Identidad
+  nombre                String
+  ci                    String
   telefono              String?
   email                 String?
-  genero                String?  // Sexo (M/F)
-  nombreIglesia         String?  // Nombre de la Iglesia y Dirección
-  nombrePastor          String?  // Nombre del Pastor
+  genero                String?
+  nombreIglesia         String?
+  nombrePastor          String?
   tomaHuellaBiometrica  Boolean  @default(false)
   entregaFoto           Boolean  @default(false)
   asignaturaId          Int?
@@ -61,25 +59,25 @@ model Profesor {
 
 // Tabla de Asignaturas
 model Asignatura {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   nombre      String
-  codigo      String?  @unique
+  codigo      String?    @unique
   profesores  Profesor[]
   notas       Nota[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@map("asignaturas")
 }
 
-// Tabla de Notas (según Excel)
+// Tabla de Notas
 model Nota {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   alumnoId     Int
   asignaturaId Int
   nota         Float?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   alumno       Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
   asignatura   Asignatura @relation(fields: [asignaturaId], references: [id], onDelete: Cascade)
