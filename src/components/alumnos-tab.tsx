@@ -176,10 +176,14 @@ export function AlumnosTab() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
+        const data = await response.json()
         if (response.ok) {
-          toast.success('Alumno creado correctamente')
+          if (data._restored) {
+            toast.success('Alumno restaurado y actualizado correctamente')
+          } else {
+            toast.success('Alumno creado correctamente')
+          }
         } else {
-          const data = await response.json()
           console.error('Error al crear:', data)
           toast.error(data.error || 'Error al crear')
           return

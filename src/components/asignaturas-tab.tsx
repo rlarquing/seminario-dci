@@ -96,10 +96,14 @@ export function AsignaturasTab() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         })
+        const data = await response.json()
         if (response.ok) {
-          toast.success('Asignatura creada correctamente')
+          if (data._restored) {
+            toast.success('Asignatura restaurada y actualizada correctamente')
+          } else {
+            toast.success('Asignatura creada correctamente')
+          }
         } else {
-          const data = await response.json()
           toast.error(data.error || 'Error al crear')
         }
       }

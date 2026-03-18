@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new asignatura
+// POST - Create new asignatura or restore deleted one
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
@@ -86,6 +86,33 @@ export async function POST(request: NextRequest) {
     if (!client) {
       // Fallback to Prisma for local development
       const { db } = await import('@/lib/db')
+      
+      // Check if exists with same codigo (including deleted)
+      if (data.codigo) {
+        const existingAsignatura = await db.asignatura.findFirst({
+          where: { codigo: data.codigo }
+        })
+        
+        if (existingAsignatura) {
+          if (!existingAsignatura.activo) {
+            // Restore and update deleted asignatura
+            const updated = await db.asignatura.update({
+              where: { id: existingAsignatura.id },
+              data: {
+                nombre: data.nombre,
+                codigo: data.codigo,
+                activo: true,
+                deletedAt: null,
+              }
+            })
+            return NextResponse.json({ ...updated, _restored: true }, { status: 200 })
+          } else {
+            return NextResponse.json({ error: 'Ya existe una asignatura activa con ese código' }, { status: 409 })
+          }
+        }
+      }
+      
+      // Create new asignatura
       const asignatura = await db.asignatura.create({
         data: {
           nombre: data.nombre,
@@ -95,7 +122,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(asignatura, { status: 201 })
     }
 
-    // Turso production
+    // Turso production - Check if exists with same codigo (including deleted)
+    if (data.codigo) {
+      const existingResult = await client.execute({
+        sql: 'SELECT * FROM asignaturas WHERE codigo = ?',
+        args: [data.codigo]
+      })
+      
+      if (existingResult.rows.length > 0) {
+        const existing = existingResult.rows[0]
+        
+        if (existing.activo === 0 || existing.activo === false) {
+          // Restore and update deleted asignatura
+          await client.execute({
+            sql: `UPDATE asignaturas SET 
+              nombre = ?, codigo = ?, activo = 1, deletedAt = NULL, updatedAt = CURRENT_TIMESTAMP
+              WHERE id = ?`,
+            args: [data.nombre, data.codigo, existing.id as number]
+          })
+          
+          // Get updated row
+          const updatedResult = await client.execute({
+            sql: 'SELECT * FROM asignaturas WHERE id = ?',
+            args: [existing.id as number]
+          })
+          
+          return NextResponse.json({
+            ...updatedResult.rows[0],
+            activo: true,
+            _restored: true
+          }, { status: 200 })
+        } else {
+          return NextResponse.json({ error: 'Ya existe una asignatura activa con ese código' }, { status: 409 })
+        }
+      }
+    }
+
+    // Create new asignatura
     const result = await client.execute({
       sql: `INSERT INTO asignaturas (nombre, codigo, activo) VALUES (?, ?, 1)`,
       args: [data.nombre, data.codigo || null]

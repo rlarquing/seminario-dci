@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create new alumno
+// POST - Create new alumno or restore deleted one
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
@@ -121,6 +121,53 @@ export async function POST(request: NextRequest) {
     if (!client) {
       // Fallback to Prisma for local development
       const { db } = await import('@/lib/db')
+      
+      // Check if exists (including deleted)
+      const existingAlumno = await db.alumno.findFirst({
+        where: {
+          OR: [
+            { ci: data.ci },
+            { numeroExpediente: parseInt(data.numeroExpediente) }
+          ]
+        }
+      })
+      
+      if (existingAlumno) {
+        if (!existingAlumno.activo) {
+          // Restore and update deleted alumno
+          const updated = await db.alumno.update({
+            where: { id: existingAlumno.id },
+            data: {
+              numeroExpediente: parseInt(data.numeroExpediente),
+              nombre: data.nombre,
+              ci: data.ci,
+              telefono: data.telefono || null,
+              email: data.email || null,
+              pasaporte: data.pasaporte || null,
+              direccion: data.direccion || null,
+              genero: data.genero || null,
+              nombreIglesia: data.nombreIglesia || null,
+              nombrePastor: data.nombrePastor || null,
+              tomaHuellaBiometrica: data.tomaHuellaBiometrica || false,
+              entregaFoto: data.entregaFoto || false,
+              pagoCuotas: data.pagoCuotas || null,
+              disposicionCampoMisionero: data.disposicionCampoMisionero || false,
+              habilidades: data.habilidades || null,
+              activo: true,
+              deletedAt: null,
+            }
+          })
+          return NextResponse.json({ ...updated, _restored: true }, { status: 200 })
+        } else {
+          // Active alumno exists
+          const message = existingAlumno.ci === data.ci 
+            ? 'Ya existe un alumno activo con ese carnet de identidad'
+            : 'Ya existe un alumno activo con ese número de expediente'
+          return NextResponse.json({ error: message }, { status: 409 })
+        }
+      }
+      
+      // Create new alumno
       const alumno = await db.alumno.create({
         data: {
           numeroExpediente: parseInt(data.numeroExpediente),
@@ -143,7 +190,69 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(alumno, { status: 201 })
     }
 
-    // Turso production
+    // Turso production - Check if exists (including deleted)
+    const existingResult = await client.execute({
+      sql: 'SELECT * FROM alumnos WHERE ci = ? OR numeroExpediente = ?',
+      args: [data.ci, parseInt(data.numeroExpediente)]
+    })
+    
+    if (existingResult.rows.length > 0) {
+      const existing = existingResult.rows[0]
+      
+      if (existing.activo === 0 || existing.activo === false) {
+        // Restore and update deleted alumno
+        await client.execute({
+          sql: `UPDATE alumnos SET 
+            numeroExpediente = ?, nombre = ?, ci = ?, telefono = ?, email = ?,
+            pasaporte = ?, direccion = ?, genero = ?, nombreIglesia = ?, nombrePastor = ?,
+            tomaHuellaBiometrica = ?, entregaFoto = ?, pagoCuotas = ?, 
+            disposicionCampoMisionero = ?, habilidades = ?, activo = 1, deletedAt = NULL,
+            updatedAt = CURRENT_TIMESTAMP
+            WHERE id = ?`,
+          args: [
+            parseInt(data.numeroExpediente),
+            data.nombre,
+            data.ci,
+            data.telefono || null,
+            data.email || null,
+            data.pasaporte || null,
+            data.direccion || null,
+            data.genero || null,
+            data.nombreIglesia || null,
+            data.nombrePastor || null,
+            data.tomaHuellaBiometrica ? 1 : 0,
+            data.entregaFoto ? 1 : 0,
+            data.pagoCuotas || null,
+            data.disposicionCampoMisionero ? 1 : 0,
+            data.habilidades || null,
+            existing.id as number
+          ]
+        })
+        
+        // Get updated row
+        const updatedResult = await client.execute({
+          sql: 'SELECT * FROM alumnos WHERE id = ?',
+          args: [existing.id as number]
+        })
+        
+        return NextResponse.json({
+          ...updatedResult.rows[0],
+          tomaHuellaBiometrica: !!updatedResult.rows[0]?.tomaHuellaBiometrica,
+          entregaFoto: !!updatedResult.rows[0]?.entregaFoto,
+          disposicionCampoMisionero: !!updatedResult.rows[0]?.disposicionCampoMisionero,
+          activo: true,
+          _restored: true
+        }, { status: 200 })
+      } else {
+        // Active alumno exists
+        const message = existing.ci === data.ci 
+          ? 'Ya existe un alumno activo con ese carnet de identidad'
+          : 'Ya existe un alumno activo con ese número de expediente'
+        return NextResponse.json({ error: message }, { status: 409 })
+      }
+    }
+
+    // Create new alumno
     const result = await client.execute({
       sql: `INSERT INTO alumnos (
         numeroExpediente, nombre, ci, telefono, email, pasaporte, direccion,
@@ -187,17 +296,6 @@ export async function POST(request: NextRequest) {
     console.error('Error creating alumno:', error)
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    const errorCode = (error as { code?: string })?.code
-    
-    if (errorCode === 'SQLITE_CONSTRAINT_UNIQUE' || errorMessage.includes('UNIQUE constraint')) {
-      const message = errorMessage.includes('numeroExpediente')
-        ? 'Ya existe un alumno con ese número de expediente'
-        : errorMessage.includes('ci')
-        ? 'Ya existe un alumno con ese carnet de identidad'
-        : 'Ya existe un alumno con esos datos'
-      
-      return NextResponse.json({ error: message }, { status: 409 })
-    }
     
     return NextResponse.json({ 
       error: 'Error al crear alumno',

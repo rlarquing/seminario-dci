@@ -188,10 +188,14 @@ export function ProfesoresTab() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         })
+        const data = await response.json()
         if (response.ok) {
-          toast.success('Profesor creado correctamente')
+          if (data._restored) {
+            toast.success('Profesor restaurado y actualizado correctamente')
+          } else {
+            toast.success('Profesor creado correctamente')
+          }
         } else {
-          const data = await response.json()
           toast.error(data.error || 'Error al crear')
           return
         }
