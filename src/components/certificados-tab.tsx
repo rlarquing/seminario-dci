@@ -197,26 +197,51 @@ export function CertificadosTab() {
         }
       })
       
-      // Footer
+      // Footer con dos firmas
       const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20
+      
+      // Fecha a la izquierda
       doc.setFontSize(10)
       doc.setTextColor(0, 0, 0)
       doc.text(`Fecha de emisión: ${getCurrentDate()}`, 15, footerY)
       
-      // QR Code
+      // Primera firma (izquierda) - QR pequeño arriba
+      const firma1X = 55
+      const firma1Y = footerY + 5
+      
       try {
-        doc.addImage('/images/qr.png', 'PNG', 155, footerY - 5, 25, 25)
+        doc.addImage('/images/qr.png', 'PNG', firma1X + 5, firma1Y, 15, 15)
       } catch {
-        console.log('Could not load QR')
+        console.log('Could not load QR 1')
       }
       
-      // Signature area
-      doc.text('_________________________', 140, footerY + 25)
       doc.setFontSize(8)
-      doc.text('Firma del Director', 155, footerY + 30, { align: 'center' })
+      doc.setTextColor(0, 0, 0)
+      doc.text('_________________________', firma1X, firma1Y + 22)
+      doc.setFontSize(8)
+      doc.text('Director', firma1X + 12, firma1Y + 27, { align: 'center' })
       doc.setFontSize(7)
       doc.setTextColor(100, 100, 100)
-      doc.text('Seminario DCI', 155, footerY + 35, { align: 'center' })
+      doc.text('Seminario DCI', firma1X + 12, firma1Y + 32, { align: 'center' })
+      
+      // Segunda firma (derecha) - QR pequeño arriba
+      const firma2X = 130
+      const firma2Y = footerY + 5
+      
+      try {
+        doc.addImage('/images/qr.png', 'PNG', firma2X + 5, firma2Y, 15, 15)
+      } catch {
+        console.log('Could not load QR 2')
+      }
+      
+      doc.setFontSize(8)
+      doc.setTextColor(0, 0, 0)
+      doc.text('_________________________', firma2X, firma2Y + 22)
+      doc.setFontSize(8)
+      doc.text('Secretaria', firma2X + 12, firma2Y + 27, { align: 'center' })
+      doc.setFontSize(7)
+      doc.setTextColor(100, 100, 100)
+      doc.text('Seminario DCI', firma2X + 12, firma2Y + 32, { align: 'center' })
       
       doc.save(`certificado_${alumno.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('PDF generado correctamente')

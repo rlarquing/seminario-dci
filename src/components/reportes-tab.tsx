@@ -61,6 +61,65 @@ interface Asignatura {
   codigo: string | null
 }
 
+// Helper function para agregar footer con dos firmas
+function addFooterWithTwoSignatures(
+  doc: ReturnType<typeof import('jspdf').jsPDF>,
+  footerY: number,
+  nombre1: string = 'Director',
+  cargo1: string = 'Seminario DCI',
+  nombre2: string = 'Secretaria',
+  cargo2: string = 'Seminario DCI'
+) {
+  const fecha = new Date().toLocaleDateString('es-ES', { 
+    day: '2-digit', 
+    month: 'long', 
+    year: 'numeric' 
+  })
+  
+  // Fecha a la izquierda
+  doc.setFontSize(9)
+  doc.setTextColor(100, 100, 100)
+  doc.text(`Fecha de emisión: ${fecha}`, 15, footerY)
+  
+  // Primera firma (izquierda) - QR pequeño arriba
+  const firma1X = 55
+  const firma1Y = footerY + 5
+  
+  try {
+    doc.addImage('/images/qr.png', 'PNG', firma1X + 5, firma1Y, 15, 15)
+  } catch {
+    console.log('No se pudo cargar el QR 1')
+  }
+  
+  doc.setFontSize(8)
+  doc.setTextColor(0, 0, 0)
+  doc.text('_________________________', firma1X, firma1Y + 22)
+  doc.setFontSize(8)
+  doc.text(nombre1, firma1X + 12, firma1Y + 27, { align: 'center' })
+  doc.setFontSize(7)
+  doc.setTextColor(100, 100, 100)
+  doc.text(cargo1, firma1X + 12, firma1Y + 32, { align: 'center' })
+  
+  // Segunda firma (derecha) - QR pequeño arriba
+  const firma2X = 130
+  const firma2Y = footerY + 5
+  
+  try {
+    doc.addImage('/images/qr.png', 'PNG', firma2X + 5, firma2Y, 15, 15)
+  } catch {
+    console.log('No se pudo cargar el QR 2')
+  }
+  
+  doc.setFontSize(8)
+  doc.setTextColor(0, 0, 0)
+  doc.text('_________________________', firma2X, firma2Y + 22)
+  doc.setFontSize(8)
+  doc.text(nombre2, firma2X + 12, firma2Y + 27, { align: 'center' })
+  doc.setFontSize(7)
+  doc.setTextColor(100, 100, 100)
+  doc.text(cargo2, firma2X + 12, firma2Y + 32, { align: 'center' })
+}
+
 export function ReportesTab() {
   const [alumnos, setAlumnos] = useState<Alumno[]>([])
   const [profesores, setProfesores] = useState<Profesor[]>([])
@@ -162,30 +221,8 @@ export function ReportesTab() {
       doc.text(`Iglesia: ${alumno.nombreIglesia || 'No especificada'}`, 15, 125)
       doc.text(`Pastor: ${alumno.nombrePastor || 'No especificado'}`, 15, 132)
       
-      // Fecha y firma
-      const fecha = new Date().toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      })
-      
-      doc.setFontSize(10)
-      doc.text(`Fecha de emisión: ${fecha}`, 15, 160)
-      
-      // QR
-      try {
-        doc.addImage('/images/qr.png', 'PNG', 155, 145, 30, 30)
-      } catch {
-        console.log('No se pudo cargar el QR')
-      }
-      
-      // Firma
-      doc.text('_________________________', 140, 190)
-      doc.setFontSize(9)
-      doc.text('Firma del Director', 155, 196, { align: 'center' })
-      doc.setFontSize(8)
-      doc.setTextColor(150, 150, 150)
-      doc.text('Seminario DCI', 155, 201, { align: 'center' })
+      // Footer con dos firmas
+      addFooterWithTwoSignatures(doc, 150, 'Director', 'Seminario DCI', 'Secretaria', 'Seminario DCI')
       
       doc.save(`constancia_${alumno.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('Constancia generada correctamente')
@@ -252,24 +289,9 @@ export function ReportesTab() {
         }
       })
       
-      // Footer con QR
+      // Footer con dos firmas
       const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15
-      const fecha = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
-      doc.setFontSize(9)
-      doc.setTextColor(100, 100, 100)
-      doc.text(`Fecha de emisión: ${fecha}`, 15, footerY)
-      
-      try {
-        doc.addImage('/images/qr.png', 'PNG', 160, footerY - 10, 25, 25)
-      } catch {
-        console.log('No se pudo cargar el QR')
-      }
-      
-      doc.setFontSize(8)
-      doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', 145, footerY + 20)
-      doc.setFontSize(7)
-      doc.text('Firma del Director', 157, footerY + 25, { align: 'center' })
+      addFooterWithTwoSignatures(doc, footerY, 'Director', 'Seminario DCI', 'Secretaria', 'Seminario DCI')
       
       doc.save('lista_alumnos.pdf')
       toast.success('Lista de alumnos generada')
@@ -373,24 +395,9 @@ export function ReportesTab() {
         }
       })
       
-      // Footer
+      // Footer con dos firmas
       const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20
-      const fecha = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
-      doc.setFontSize(9)
-      doc.setTextColor(100, 100, 100)
-      doc.text(`Fecha de emisión: ${fecha}`, 15, footerY)
-      
-      try {
-        doc.addImage('/images/qr.png', 'PNG', 155, footerY - 5, 25, 25)
-      } catch {
-        console.log('No se pudo cargar el QR')
-      }
-      
-      doc.setFontSize(9)
-      doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', 140, footerY + 25)
-      doc.setFontSize(8)
-      doc.text('Firma del Director', 155, footerY + 30, { align: 'center' })
+      addFooterWithTwoSignatures(doc, footerY, 'Director', 'Seminario DCI', 'Secretaria', 'Seminario DCI')
       
       doc.save(`kardex_${alumno.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('Kardex generado correctamente')
@@ -489,24 +496,9 @@ export function ReportesTab() {
         }
       })
       
-      // Footer
+      // Footer con dos firmas
       const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15
-      const fecha = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
-      doc.setFontSize(9)
-      doc.setTextColor(100, 100, 100)
-      doc.text(`Fecha de emisión: ${fecha}`, 15, footerY)
-      
-      try {
-        doc.addImage('/images/qr.png', 'PNG', 160, footerY - 10, 25, 25)
-      } catch {
-        console.log('No se pudo cargar el QR')
-      }
-      
-      doc.setFontSize(8)
-      doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', 145, footerY + 20)
-      doc.setFontSize(7)
-      doc.text('Firma del Director', 157, footerY + 25, { align: 'center' })
+      addFooterWithTwoSignatures(doc, footerY, 'Director', 'Seminario DCI', 'Secretaria', 'Seminario DCI')
       
       doc.save(`reporte_${asignatura?.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('Reporte generado correctamente')
@@ -638,8 +630,9 @@ export function ReportesTab() {
       })
       
       // Top iglesias
+      let lastY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
       if (topIglesias.length > 0) {
-        const yIgl = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+        const yIgl = lastY + 10
         doc.setFontSize(12)
         doc.setTextColor(185, 28, 28)
         doc.text('IGLESIAS CON MÁS ALUMNOS', 15, yIgl)
@@ -654,26 +647,13 @@ export function ReportesTab() {
           styles: { fontSize: 10 },
           headStyles: { fillColor: [185, 28, 28], textColor: [255, 255, 255] }
         })
+        
+        lastY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
       }
       
-      // Footer
-      const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20
-      const fecha = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
-      doc.setFontSize(9)
-      doc.setTextColor(100, 100, 100)
-      doc.text(`Fecha de emisión: ${fecha}`, 15, footerY)
-      
-      try {
-        doc.addImage('/images/qr.png', 'PNG', 155, footerY - 5, 25, 25)
-      } catch {
-        console.log('No se pudo cargar el QR')
-      }
-      
-      doc.setFontSize(9)
-      doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', 140, footerY + 25)
-      doc.setFontSize(8)
-      doc.text('Firma del Director', 155, footerY + 30, { align: 'center' })
+      // Footer con dos firmas
+      const footerY = lastY + 20
+      addFooterWithTwoSignatures(doc, footerY, 'Director', 'Seminario DCI', 'Secretaria', 'Seminario DCI')
       
       doc.save('resumen_estadistico.pdf')
       toast.success('Resumen estadístico generado')
