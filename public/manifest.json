@@ -1,0 +1,37 @@
+{
+  "name": "Seminario DCI - Sistema de Gestión Académica",
+  "short_name": "Seminario DCI",
+  "description": "Sistema integral de gestión académica para el Seminario DCI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#b91c1c",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "892x765",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Alumnos",
+      "short_name": "Alumnos",
+      "description": "Gestión de alumnos",
+      "url": "/",
+      "icons": [{ "src": "/images/logo.png", "sizes": "any" }]
+    }
+  ]
+}

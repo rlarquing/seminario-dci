@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// Works with both SQLite (local) and Turso (production via adapter)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Alumno {
+  id                        Int       @id @default(autoincrement())
+  numeroExpediente          Int       @unique
+  nombre                    String
+  ci                        String    @unique
+  telefono                  String?
+  email                     String?
+  pasaporte                 String?
+  direccion                 String?
+  genero                    String?
+  nombreIglesia             String?
+  nombrePastor              String?
+  tomaHuellaBiometrica      Boolean   @default(false)
+  entregaFoto               Boolean   @default(false)
+  pagoCuotas                String?
+  disposicionCampoMisionero Boolean   @default(false)
+  habilidades               String?
+  activo                    Boolean   @default(true)
+  deletedAt                 DateTime?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  notas                     Nota[]
+
+  @@map("alumnos")
+}
+
+model Profesor {
+  id                    Int       @id @default(autoincrement())
+  nombre                String
+  ci                    String
+  telefono              String?
+  email                 String?
+  genero                String?
+  nombreIglesia         String?
+  nombrePastor          String?
+  tomaHuellaBiometrica  Boolean   @default(false)
+  entregaFoto           Boolean   @default(false)
+  asignaturaId          Int?
+  activo                Boolean   @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  asignatura            Asignatura? @relation(fields: [asignaturaId], references: [id], onDelete: SetNull)
+
+  @@map("profesores")
+}
+
+model Asignatura {
+  id          Int        @id @default(autoincrement())
+  nombre      String
+  codigo      String?    @unique
+  activo      Boolean    @default(true)
+  deletedAt   DateTime?
+  profesores  Profesor[]
+  notas       Nota[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("asignaturas")
+}
+
+model Nota {
+  id           Int       @id @default(autoincrement())
+  alumnoId     Int
+  asignaturaId Int
+  nota         Float?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  alumno       Alumno    @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  asignatura   Asignatura @relation(fields: [asignaturaId], references: [id], onDelete: Cascade)
+
+  @@unique([alumnoId, asignaturaId])
+  @@map("notas")
+}
