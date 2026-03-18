@@ -116,11 +116,31 @@ export function AlumnosTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Validación manual de campos requeridos
+    if (!formData.numeroExpediente.trim()) {
+      toast.error('El número de expediente es requerido')
+      return
+    }
+    if (isNaN(parseInt(formData.numeroExpediente))) {
+      toast.error('El número de expediente debe ser un número válido')
+      return
+    }
+    if (!formData.nombre.trim()) {
+      toast.error('El nombre es requerido')
+      return
+    }
+    if (!formData.ci.trim()) {
+      toast.error('El carnet de identidad es requerido')
+      return
+    }
+    
     try {
       const payload = {
         ...formData,
         numeroExpediente: parseInt(formData.numeroExpediente),
       }
+
+      console.log('Enviando datos del alumno:', payload)
 
       if (editingId) {
         const response = await fetch(`/api/alumnos/${editingId}`, {
@@ -132,6 +152,7 @@ export function AlumnosTab() {
           toast.success('Alumno actualizado correctamente')
         } else {
           const data = await response.json()
+          console.error('Error al actualizar:', data)
           toast.error(data.error || 'Error al actualizar')
           return
         }
@@ -145,6 +166,7 @@ export function AlumnosTab() {
           toast.success('Alumno creado correctamente')
         } else {
           const data = await response.json()
+          console.error('Error al crear:', data)
           toast.error(data.error || 'Error al crear')
           return
         }
@@ -159,8 +181,9 @@ export function AlumnosTab() {
         await cache.delete('/api/alumnos')
       }
       fetchAlumnos(showDeleted)
-    } catch {
-      toast.error('Error al guardar el alumno')
+    } catch (error) {
+      console.error('Error al guardar alumno:', error)
+      toast.error('Error al guardar el alumno: ' + (error instanceof Error ? error.message : 'Error desconocido'))
     }
   }
 
