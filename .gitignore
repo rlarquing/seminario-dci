@@ -56,6 +56,3 @@ db/*.db-journal
 
 # Uploaded files (keep structure but not content)
 upload/*
-
-# Keep images used by app
-!public/images/
