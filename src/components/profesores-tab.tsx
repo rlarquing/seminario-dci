@@ -466,9 +466,9 @@ export function ProfesoresTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProfesores.map((profesor) => (
+                filteredProfesores.map((profesor, index) => (
                   <TableRow key={profesor.id} className={showDeleted ? 'bg-red-50' : ''}>
-                    <TableCell>{profesor.id}</TableCell>
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell>{profesor.nombre}</TableCell>
                     <TableCell>{profesor.ci}</TableCell>
                     <TableCell>{profesor.genero === 'M' ? 'Masculino' : profesor.genero === 'F' ? 'Femenino' : '-'}</TableCell>

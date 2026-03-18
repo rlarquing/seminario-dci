@@ -288,9 +288,9 @@ export function AsignaturasTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAsignaturas.map((asignatura) => (
+                filteredAsignaturas.map((asignatura, index) => (
                   <TableRow key={asignatura.id} className={showDeleted ? 'bg-red-50' : ''}>
-                    <TableCell>{asignatura.id}</TableCell>
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell>{asignatura.codigo || '-'}</TableCell>
                     <TableCell>{asignatura.nombre}</TableCell>
                     <TableCell>

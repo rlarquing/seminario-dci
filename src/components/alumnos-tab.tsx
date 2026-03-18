@@ -672,6 +672,7 @@ export function AlumnosTab() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">No.</TableHead>
                   <TableHead>No. Exp.</TableHead>
                   <TableHead>Nombre Completo</TableHead>
                   <TableHead>CI</TableHead>
@@ -684,14 +685,15 @@ export function AlumnosTab() {
               <TableBody>
                 {filteredAlumnos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                       {showDeleted ? 'No hay alumnos eliminados' : 'No hay alumnos registrados'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAlumnos.map((alumno) => (
+                  filteredAlumnos.map((alumno, index) => (
                     <TableRow key={alumno.id} className={showDeleted ? 'bg-red-50' : ''}>
-                      <TableCell className="font-medium">{alumno.numeroExpediente}</TableCell>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell>{alumno.numeroExpediente}</TableCell>
                       <TableCell>{alumno.nombre}</TableCell>
                       <TableCell>{alumno.ci}</TableCell>
                       <TableCell>{alumno.telefono || '-'}</TableCell>

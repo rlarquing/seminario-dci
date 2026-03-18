@@ -224,7 +224,7 @@ export function NotasTab() {
                 {filteredAlumnos.length === 0 ? (
                   <div className="p-4 text-center text-gray-500">No hay alumnos</div>
                 ) : (
-                  filteredAlumnos.map(alumno => (
+                  filteredAlumnos.map((alumno, index) => (
                     <div
                       key={alumno.id}
                       onClick={() => setSelectedAlumno(alumno.id.toString())}
@@ -232,7 +232,7 @@ export function NotasTab() {
                         selectedAlumno === alumno.id.toString() ? 'bg-red-50 border-l-4 border-l-red-600' : ''
                       }`}
                     >
-                      <div className="font-medium">{alumno.nombre}</div>
+                      <div className="font-medium">{index + 1}. {alumno.nombre}</div>
                       <div className="text-sm text-gray-500">
                         Exp. {alumno.numeroExpediente} | CI: {alumno.ci}
                       </div>
