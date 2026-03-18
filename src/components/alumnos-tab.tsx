@@ -135,9 +135,23 @@ export function AlumnosTab() {
     }
     
     try {
+      // Limpiar datos: convertir strings vacíos a null
       const payload = {
-        ...formData,
         numeroExpediente: parseInt(formData.numeroExpediente),
+        nombre: formData.nombre.trim(),
+        ci: formData.ci.trim(),
+        telefono: formData.telefono.trim() || null,
+        email: formData.email.trim() || null,
+        pasaporte: formData.pasaporte.trim() || null,
+        direccion: formData.direccion.trim() || null,
+        genero: formData.genero || null,
+        nombreIglesia: formData.nombreIglesia.trim() || null,
+        nombrePastor: formData.nombrePastor.trim() || null,
+        tomaHuellaBiometrica: formData.tomaHuellaBiometrica || false,
+        entregaFoto: formData.entregaFoto || false,
+        pagoCuotas: formData.pagoCuotas.trim() || null,
+        disposicionCampoMisionero: formData.disposicionCampoMisionero || false,
+        habilidades: formData.habilidades.trim() || null,
       }
 
       console.log('Enviando datos del alumno:', payload)

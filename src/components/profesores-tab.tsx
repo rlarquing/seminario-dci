@@ -153,10 +153,21 @@ export function ProfesoresTab() {
     }
     
     try {
+      // Limpiar datos: convertir strings vacíos a null
       const payload = {
-        ...formData,
+        nombre: formData.nombre.trim(),
+        ci: formData.ci.trim(),
+        telefono: formData.telefono.trim() || null,
+        email: formData.email.trim() || null,
+        genero: formData.genero || null,
+        nombreIglesia: formData.nombreIglesia.trim() || null,
+        nombrePastor: formData.nombrePastor.trim() || null,
+        tomaHuellaBiometrica: formData.tomaHuellaBiometrica || false,
+        entregaFoto: formData.entregaFoto || false,
         asignaturaId: formData.asignaturaId ? parseInt(formData.asignaturaId) : null,
       }
+
+      console.log('Enviando datos del profesor:', payload)
 
       if (editingId) {
         const response = await fetch(`/api/profesores/${editingId}`, {
