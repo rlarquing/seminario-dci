@@ -430,7 +430,7 @@ export function AlumnosTab() {
         })
       }
       
-      // Footer con dos firmas
+      // Footer con QR centrado y dos firmas
       const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY 
         ? (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20 
         : 220
@@ -444,43 +444,29 @@ export function AlumnosTab() {
         year: 'numeric'
       })}`, 15, footerY)
       
-      // Primera firma (izquierda) - QR pequeño arriba
-      const firma1X = 55
-      const firma1Y = footerY + 5
+      // QR centrado arriba de las firmas
+      const qrSize = 20
+      const qrX = 105 - (qrSize / 2) // Centrar en la página
+      const qrY = footerY + 2
       
       try {
-        doc.addImage('/images/qr.png', 'PNG', firma1X + 5, firma1Y, 15, 15)
+        doc.addImage('/images/qr.png', 'PNG', qrX, qrY, qrSize, qrSize)
       } catch {
-        console.log('No se pudo cargar el QR 1')
+        console.log('No se pudo cargar el QR')
       }
       
+      // Dos líneas de firma debajo del QR
+      const firmaY = qrY + qrSize + 10
+      
+      // Primera firma (izquierda)
+      const firma1X = 45
       doc.setFontSize(8)
       doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', firma1X, firma1Y + 22)
-      doc.setFontSize(8)
-      doc.text('Director', firma1X + 12, firma1Y + 27, { align: 'center' })
-      doc.setFontSize(7)
-      doc.setTextColor(100, 100, 100)
-      doc.text('Seminario DCI', firma1X + 12, firma1Y + 32, { align: 'center' })
+      doc.text('_________________________', firma1X, firmaY)
       
-      // Segunda firma (derecha) - QR pequeño arriba
-      const firma2X = 130
-      const firma2Y = footerY + 5
-      
-      try {
-        doc.addImage('/images/qr.png', 'PNG', firma2X + 5, firma2Y, 15, 15)
-      } catch {
-        console.log('No se pudo cargar el QR 2')
-      }
-      
-      doc.setFontSize(8)
-      doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', firma2X, firma2Y + 22)
-      doc.setFontSize(8)
-      doc.text('Secretaria', firma2X + 12, firma2Y + 27, { align: 'center' })
-      doc.setFontSize(7)
-      doc.setTextColor(100, 100, 100)
-      doc.text('Seminario DCI', firma2X + 12, firma2Y + 32, { align: 'center' })
+      // Segunda firma (derecha)
+      const firma2X = 115
+      doc.text('_________________________', firma2X, firmaY)
       
       // Guardar
       doc.save(`expediente_${alumnoData.nombre.replace(/\s+/g, '_')}.pdf`)

@@ -197,7 +197,7 @@ export function CertificadosTab() {
         }
       })
       
-      // Footer con dos firmas
+      // Footer con QR centrado y dos firmas
       const footerY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 20
       
       // Fecha a la izquierda
@@ -205,43 +205,29 @@ export function CertificadosTab() {
       doc.setTextColor(0, 0, 0)
       doc.text(`Fecha de emisión: ${getCurrentDate()}`, 15, footerY)
       
-      // Primera firma (izquierda) - QR pequeño arriba
-      const firma1X = 55
-      const firma1Y = footerY + 5
+      // QR centrado arriba de las firmas
+      const qrSize = 20
+      const qrX = 105 - (qrSize / 2) // Centrar en la página
+      const qrY = footerY + 2
       
       try {
-        doc.addImage('/images/qr.png', 'PNG', firma1X + 5, firma1Y, 15, 15)
+        doc.addImage('/images/qr.png', 'PNG', qrX, qrY, qrSize, qrSize)
       } catch {
-        console.log('Could not load QR 1')
+        console.log('Could not load QR')
       }
       
+      // Dos líneas de firma debajo del QR
+      const firmaY = qrY + qrSize + 10
+      
+      // Primera firma (izquierda)
+      const firma1X = 45
       doc.setFontSize(8)
       doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', firma1X, firma1Y + 22)
-      doc.setFontSize(8)
-      doc.text('Director', firma1X + 12, firma1Y + 27, { align: 'center' })
-      doc.setFontSize(7)
-      doc.setTextColor(100, 100, 100)
-      doc.text('Seminario DCI', firma1X + 12, firma1Y + 32, { align: 'center' })
+      doc.text('_________________________', firma1X, firmaY)
       
-      // Segunda firma (derecha) - QR pequeño arriba
-      const firma2X = 130
-      const firma2Y = footerY + 5
-      
-      try {
-        doc.addImage('/images/qr.png', 'PNG', firma2X + 5, firma2Y, 15, 15)
-      } catch {
-        console.log('Could not load QR 2')
-      }
-      
-      doc.setFontSize(8)
-      doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', firma2X, firma2Y + 22)
-      doc.setFontSize(8)
-      doc.text('Secretaria', firma2X + 12, firma2Y + 27, { align: 'center' })
-      doc.setFontSize(7)
-      doc.setTextColor(100, 100, 100)
-      doc.text('Seminario DCI', firma2X + 12, firma2Y + 32, { align: 'center' })
+      // Segunda firma (derecha)
+      const firma2X = 115
+      doc.text('_________________________', firma2X, firmaY)
       
       doc.save(`certificado_${alumno.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('PDF generado correctamente')
@@ -406,15 +392,23 @@ export function CertificadosTab() {
               </div>
 
               {/* Footer */}
-              <div className="mt-8 flex justify-between items-end">
-                <div className="text-sm text-gray-500">
+              <div className="mt-8">
+                <div className="text-sm text-gray-500 mb-4">
                   <p>Fecha de emisión: {getCurrentDate()}</p>
                 </div>
-                <div className="text-center">
-                  <img src="/images/qr.png" alt="QR" className="w-20 h-20 mx-auto mb-2" />
-                  <div className="border-t border-gray-400 pt-2 mt-4">
-                    <p className="text-sm font-semibold">Firma del Director</p>
-                    <p className="text-xs text-gray-500">Seminario DCI</p>
+                <div className="flex flex-col items-center">
+                  <img src="/images/qr.png" alt="QR" className="w-16 h-16 mb-4" />
+                  <div className="flex justify-center gap-16 w-full">
+                    <div className="text-center">
+                      <div className="border-t border-gray-400 pt-2 mt-4 w-40">
+                        <p className="text-xs text-gray-500">_________________________</p>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="border-t border-gray-400 pt-2 mt-4 w-40">
+                        <p className="text-xs text-gray-500">_________________________</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
