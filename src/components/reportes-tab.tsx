@@ -91,13 +91,11 @@ function addFooterWithTwoSignatures(
   // Dos líneas de firma después de un salto
   const firmaY = qrY + qrSize + 15
   
-  // Primera línea (izquierda)
+  // Líneas más largas
   doc.setFontSize(8)
   doc.setTextColor(0, 0, 0)
-  doc.text('_________________________', 45, firmaY)
-  
-  // Segunda línea (derecha)
-  doc.text('_________________________', 115, firmaY)
+  doc.text('________________________________', 35, firmaY)
+  doc.text('________________________________', 110, firmaY)
 }
 
 export function ReportesTab() {

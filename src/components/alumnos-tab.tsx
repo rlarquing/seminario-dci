@@ -455,13 +455,13 @@ export function AlumnosTab() {
         console.log('No se pudo cargar el QR')
       }
       
-      // Dos líneas de firma después de un salto
+      // Dos líneas de firma después de un salto - más largas
       const firmaY = qrY + qrSize + 15
       
       doc.setFontSize(8)
       doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', 45, firmaY)
-      doc.text('_________________________', 115, firmaY)
+      doc.text('________________________________', 35, firmaY)
+      doc.text('________________________________', 110, firmaY)
       
       // Guardar
       doc.save(`expediente_${alumnoData.nombre.replace(/\s+/g, '_')}.pdf`)

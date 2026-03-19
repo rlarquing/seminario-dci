@@ -216,13 +216,13 @@ export function CertificadosTab() {
         console.log('Could not load QR')
       }
       
-      // Dos líneas de firma después de un salto
+      // Dos líneas de firma después de un salto - más largas
       const firmaY = qrY + qrSize + 15
       
       doc.setFontSize(8)
       doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', 45, firmaY)
-      doc.text('_________________________', 115, firmaY)
+      doc.text('________________________________', 35, firmaY)
+      doc.text('________________________________', 110, firmaY)
       
       doc.save(`certificado_${alumno.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('PDF generado correctamente')
@@ -393,12 +393,12 @@ export function CertificadosTab() {
                 </div>
                 <div className="flex flex-col items-center">
                   <img src="/images/qr.png" alt="QR" className="w-16 h-16 mb-6" />
-                  <div className="flex justify-center gap-20 w-full">
+                  <div className="flex justify-center gap-16 w-full">
                     <div className="text-center">
-                      <p className="text-sm">_________________________</p>
+                      <p className="text-sm">________________________________</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm">_________________________</p>
+                      <p className="text-sm">________________________________</p>
                     </div>
                   </div>
                 </div>
