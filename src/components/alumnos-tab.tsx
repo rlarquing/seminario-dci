@@ -444,10 +444,10 @@ export function AlumnosTab() {
         year: 'numeric'
       })}`, 15, footerY)
       
-      // QR centrado arriba de las firmas
+      // QR centrado
       const qrSize = 20
-      const qrX = 105 - (qrSize / 2) // Centrar en la página
-      const qrY = footerY + 2
+      const qrX = 105 - (qrSize / 2)
+      const qrY = footerY + 5
       
       try {
         doc.addImage('/images/qr.png', 'PNG', qrX, qrY, qrSize, qrSize)
@@ -455,18 +455,13 @@ export function AlumnosTab() {
         console.log('No se pudo cargar el QR')
       }
       
-      // Dos líneas de firma debajo del QR
-      const firmaY = qrY + qrSize + 10
+      // Dos líneas de firma después de un salto
+      const firmaY = qrY + qrSize + 15
       
-      // Primera firma (izquierda)
-      const firma1X = 45
       doc.setFontSize(8)
       doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', firma1X, firmaY)
-      
-      // Segunda firma (derecha)
-      const firma2X = 115
-      doc.text('_________________________', firma2X, firmaY)
+      doc.text('_________________________', 45, firmaY)
+      doc.text('_________________________', 115, firmaY)
       
       // Guardar
       doc.save(`expediente_${alumnoData.nombre.replace(/\s+/g, '_')}.pdf`)

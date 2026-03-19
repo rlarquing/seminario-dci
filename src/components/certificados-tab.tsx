@@ -205,10 +205,10 @@ export function CertificadosTab() {
       doc.setTextColor(0, 0, 0)
       doc.text(`Fecha de emisión: ${getCurrentDate()}`, 15, footerY)
       
-      // QR centrado arriba de las firmas
+      // QR centrado
       const qrSize = 20
-      const qrX = 105 - (qrSize / 2) // Centrar en la página
-      const qrY = footerY + 2
+      const qrX = 105 - (qrSize / 2)
+      const qrY = footerY + 5
       
       try {
         doc.addImage('/images/qr.png', 'PNG', qrX, qrY, qrSize, qrSize)
@@ -216,18 +216,13 @@ export function CertificadosTab() {
         console.log('Could not load QR')
       }
       
-      // Dos líneas de firma debajo del QR
-      const firmaY = qrY + qrSize + 10
+      // Dos líneas de firma después de un salto
+      const firmaY = qrY + qrSize + 15
       
-      // Primera firma (izquierda)
-      const firma1X = 45
       doc.setFontSize(8)
       doc.setTextColor(0, 0, 0)
-      doc.text('_________________________', firma1X, firmaY)
-      
-      // Segunda firma (derecha)
-      const firma2X = 115
-      doc.text('_________________________', firma2X, firmaY)
+      doc.text('_________________________', 45, firmaY)
+      doc.text('_________________________', 115, firmaY)
       
       doc.save(`certificado_${alumno.nombre.replace(/\s+/g, '_')}.pdf`)
       toast.success('PDF generado correctamente')
@@ -397,17 +392,13 @@ export function CertificadosTab() {
                   <p>Fecha de emisión: {getCurrentDate()}</p>
                 </div>
                 <div className="flex flex-col items-center">
-                  <img src="/images/qr.png" alt="QR" className="w-16 h-16 mb-4" />
-                  <div className="flex justify-center gap-16 w-full">
+                  <img src="/images/qr.png" alt="QR" className="w-16 h-16 mb-6" />
+                  <div className="flex justify-center gap-20 w-full">
                     <div className="text-center">
-                      <div className="border-t border-gray-400 pt-2 mt-4 w-40">
-                        <p className="text-xs text-gray-500">_________________________</p>
-                      </div>
+                      <p className="text-sm">_________________________</p>
                     </div>
                     <div className="text-center">
-                      <div className="border-t border-gray-400 pt-2 mt-4 w-40">
-                        <p className="text-xs text-gray-500">_________________________</p>
-                      </div>
+                      <p className="text-sm">_________________________</p>
                     </div>
                   </div>
                 </div>

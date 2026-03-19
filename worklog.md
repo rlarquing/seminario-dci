@@ -44,15 +44,15 @@ Stage Summary:
 ---
 Task ID: 4
 Agent: Main Agent
-Task: Feature - Footer con dos firmas en reportes PDF
+Task: Feature - Footer con QR centrado y dos firmas en reportes PDF
 
 Work Log:
-- Creada función helper addFooterWithTwoSignatures para reportes
-- Agregado QR pequeño (15x15mm) arriba de cada firma
-- Primera firma: Director / Seminario DCI
-- Segunda firma: Secretaria / Seminario DCI
+- Descargado QR actualizado de GitHub (public/images/qr.png)
+- QR centrado arriba de las firmas (20x20mm)
+- Dos líneas de firma simples para nombres de directivos
+- Sin títulos predefinidos (Director/Secretaria)
 - Fecha de emisión a la izquierda
 - Actualizados: reportes-tab.tsx, certificados-tab.tsx, alumnos-tab.tsx
 
 Stage Summary:
-- Todos los reportes PDF ahora tienen dos líneas de firma con QR arriba
+- Todos los reportes PDF ahora tienen QR centrado con dos líneas de firma debajo
