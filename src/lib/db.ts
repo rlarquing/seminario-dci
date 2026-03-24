@@ -32,9 +32,9 @@ function createPrismaClient(): PrismaClient {
     })
   }
   
-  // Local SQLite - use absolute path for reliability
-  // Note: SQLite URLs in Prisma need the file: prefix
-  const databaseUrl = 'file:/home/z/my-project/prisma/db/custom.db'
+  // Local SQLite - use absolute path from project root
+  const dbPath = '/media/usb-sdb1/reactprojects/seminario-dci/prisma/db/custom.db'
+  const databaseUrl = `file:${dbPath}`
   console.log('📁 [DEVELOPMENT] Using SQLite:', databaseUrl)
 
   return new PrismaClient({

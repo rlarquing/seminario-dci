@@ -136,27 +136,21 @@ export async function POST(request: NextRequest) {
         await tx.alumno.deleteMany()
         await tx.asignatura.deleteMany()
         
-        // Insertar asignaturas primero
+        // Insertar asignaturas primero (sin especificar ID)
         for (const asig of asignaturas) {
           await tx.asignatura.create({
             data: {
-              id: asig.id,
               nombre: asig.nombre,
-              codigo: asig.codigo,
-              activo: asig.activo ?? true,
-              deletedAt: asig.deletedAt ? new Date(asig.deletedAt) : null,
-              createdAt: asig.createdAt ? new Date(asig.createdAt) : new Date(),
-              updatedAt: asig.updatedAt ? new Date(asig.updatedAt) : new Date(),
+              codigo: asig.codigo || null,
             }
           })
           insertedAsignaturas++
         }
         
-        // Insertar alumnos
+        // Insertar alumnos (sin especificar ID)
         for (const alum of alumnos) {
           await tx.alumno.create({
             data: {
-              id: alum.id,
               numeroExpediente: alum.numeroExpediente,
               nombre: alum.nombre,
               ci: alum.ci,
@@ -172,20 +166,15 @@ export async function POST(request: NextRequest) {
               pagoCuotas: alum.pagoCuotas,
               disposicionCampoMisionero: alum.disposicionCampoMisionero ?? false,
               habilidades: alum.habilidades,
-              activo: alum.activo ?? true,
-              deletedAt: alum.deletedAt ? new Date(alum.deletedAt) : null,
-              createdAt: alum.createdAt ? new Date(alum.createdAt) : new Date(),
-              updatedAt: alum.updatedAt ? new Date(alum.updatedAt) : new Date(),
             }
           })
           insertedAlumnos++
         }
         
-        // Insertar profesores
+        // Insertar profesores (sin especificar ID)
         for (const prof of profesores) {
           await tx.profesor.create({
             data: {
-              id: prof.id,
               nombre: prof.nombre,
               ci: prof.ci,
               telefono: prof.telefono,
@@ -195,26 +184,19 @@ export async function POST(request: NextRequest) {
               nombrePastor: prof.nombrePastor,
               tomaHuellaBiometrica: prof.tomaHuellaBiometrica ?? false,
               entregaFoto: prof.entregaFoto ?? false,
-              asignaturaId: prof.asignaturaId,
-              activo: prof.activo ?? true,
-              deletedAt: prof.deletedAt ? new Date(prof.deletedAt) : null,
-              createdAt: prof.createdAt ? new Date(prof.createdAt) : new Date(),
-              updatedAt: prof.updatedAt ? new Date(prof.updatedAt) : new Date(),
+              asignaturaId: prof.asignaturaId || null,
             }
           })
           insertedProfesores++
         }
         
-        // Insertar notas
+        // Insertar notas (sin especificar ID)
         for (const nota of notas) {
           await tx.nota.create({
             data: {
-              id: nota.id,
               alumnoId: nota.alumnoId,
               asignaturaId: nota.asignaturaId,
               nota: nota.nota,
-              createdAt: nota.createdAt ? new Date(nota.createdAt) : new Date(),
-              updatedAt: nota.updatedAt ? new Date(nota.updatedAt) : new Date(),
             }
           })
           insertedNotas++
