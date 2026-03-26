@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
     
     // Turso production
     let sql = 'SELECT * FROM asignaturas'
-    if (!includeDeleted) {
-      sql += ' WHERE activo = 1'
-    } else if (onlyDeleted) {
+    if (onlyDeleted) {
       sql += ' WHERE activo = 0'
+    } else if (!includeDeleted) {
+      sql += ' WHERE activo = 1'
     }
     sql += ' ORDER BY id ASC'
     

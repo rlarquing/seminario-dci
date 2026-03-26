@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
       const db = getDb()
       
       const where: { activo?: boolean } = {}
-      if (!includeDeleted) {
-        where.activo = true
-      } else if (onlyDeleted) {
+      if (onlyDeleted) {
         where.activo = false
+      } else if (!includeDeleted) {
+        where.activo = true
       }
       
       const profesores = await db.profesor.findMany({
@@ -55,13 +55,14 @@ export async function GET(request: NextRequest) {
       FROM profesores p
       LEFT JOIN asignaturas a ON p.asignaturaId = a.id`
     
-    if (!includeDeleted) {
-      sql += ' WHERE p.activo = 1'
-    } else if (onlyDeleted) {
+    if (onlyDeleted) {
       sql += ' WHERE p.activo = 0'
+    } else if (!includeDeleted) {
+      sql += ' WHERE p.activo = 1'
     }
     sql += ' ORDER BY p.id ASC'
     
+    const result = await client.execute(sql)
     return NextResponse.json(result.rows.map(row => ({
       ...row,
       tomaHuellaBiometrica: !!row.tomaHuellaBiometrica,

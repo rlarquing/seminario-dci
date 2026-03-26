@@ -34,11 +34,12 @@ export async function GET(request: NextRequest) {
       const db = getDb()
       
       const where: { activo?: boolean } = {}
-      if (!includeDeleted) {
-        where.activo = true  // Solo activos por defecto
-      } else if (onlyDeleted) {
+      if (onlyDeleted) {
         where.activo = false  // Solo eliminados
+      } else if (!includeDeleted) {
+        where.activo = true  // Solo activos por defecto
       }
+      // Si includeDeleted=true, no aplica filtro de activo
       
       const alumnos = await db.alumno.findMany({
         where,
@@ -54,13 +55,14 @@ export async function GET(request: NextRequest) {
     
     // Turso production
     let sql = 'SELECT * FROM alumnos'
-    if (!includeDeleted) {
-      sql += ' WHERE activo = 1'
-    } else if (onlyDeleted) {
+    if (onlyDeleted) {
       sql += ' WHERE activo = 0'
+    } else if (!includeDeleted) {
+      sql += ' WHERE activo = 1'
     }
     sql += ' ORDER BY numeroExpediente ASC'
     
+    const result = await client.execute(sql)
     const alumnos = []
     for (const row of result.rows) {
       const notasResult = await client.execute({
