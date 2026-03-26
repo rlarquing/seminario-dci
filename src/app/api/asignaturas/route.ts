@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
       const db = getDb()
       
       const where: { activo?: boolean } = {}
-      if (!includeDeleted) {
-        where.activo = true
-      } else if (onlyDeleted) {
+      if (onlyDeleted) {
         where.activo = false
+      } else if (!includeDeleted) {
+        where.activo = true
       }
       
       const asignaturas = await db.asignatura.findMany({
