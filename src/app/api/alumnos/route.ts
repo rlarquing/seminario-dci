@@ -19,15 +19,29 @@ function getTursoClient() {
   })
 }
 
-// GET - Listar todos los alumnos
+// GET - Listar alumnos activos (por defecto)
+// Params opcionales: ?includeDeleted=true | ?onlyDeleted=true
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+    const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+    
     const client = getTursoClient()
     
     if (!client) {
       // Local development with Prisma
       const db = getDb()
+      
+      const where: { activo?: boolean } = {}
+      if (!includeDeleted) {
+        where.activo = true  // Solo activos por defecto
+      } else if (onlyDeleted) {
+        where.activo = false  // Solo eliminados
+      }
+      
       const alumnos = await db.alumno.findMany({
+        where,
         orderBy: { numeroExpediente: 'asc' },
         include: {
           notas: {
@@ -39,7 +53,13 @@ export async function GET(request: NextRequest) {
     }
     
     // Turso production
-    const result = await client.execute('SELECT * FROM alumnos ORDER BY numeroExpediente ASC')
+    let sql = 'SELECT * FROM alumnos'
+    if (!includeDeleted) {
+      sql += ' WHERE activo = 1'
+    } else if (onlyDeleted) {
+      sql += ' WHERE activo = 0'
+    }
+    sql += ' ORDER BY numeroExpediente ASC'
     
     const alumnos = []
     for (const row of result.rows) {

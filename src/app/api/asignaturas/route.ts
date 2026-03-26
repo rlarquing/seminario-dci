@@ -19,22 +19,44 @@ function getTursoClient() {
   })
 }
 
-// GET - Listar todas las asignaturas
+// GET - Listar asignaturas activas (por defecto)
+// Params opcionales: ?includeDeleted=true | ?onlyDeleted=true
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+    const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+    
     const client = getTursoClient()
     
     if (!client) {
       // Local development with Prisma
       const db = getDb()
+      
+      const where: { activo?: boolean } = {}
+      if (!includeDeleted) {
+        where.activo = true
+      } else if (onlyDeleted) {
+        where.activo = false
+      }
+      
       const asignaturas = await db.asignatura.findMany({
+        where,
         orderBy: { id: 'asc' }
       })
       return NextResponse.json(asignaturas)
     }
     
     // Turso production
-    const result = await client.execute('SELECT * FROM asignaturas ORDER BY id ASC')
+    let sql = 'SELECT * FROM asignaturas'
+    if (!includeDeleted) {
+      sql += ' WHERE activo = 1'
+    } else if (onlyDeleted) {
+      sql += ' WHERE activo = 0'
+    }
+    sql += ' ORDER BY id ASC'
+    
+    const result = await client.execute(sql)
     return NextResponse.json(result.rows)
   } catch (error) {
     console.error('Error fetching asignaturas:', error)

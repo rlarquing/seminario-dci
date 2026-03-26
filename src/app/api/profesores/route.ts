@@ -19,15 +19,29 @@ function getTursoClient() {
   })
 }
 
-// GET - Listar todos los profesores
+// GET - Listar profesores activos (por defecto)
+// Params opcionales: ?includeDeleted=true | ?onlyDeleted=true
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+    const onlyDeleted = searchParams.get('onlyDeleted') === 'true'
+    
     const client = getTursoClient()
     
     if (!client) {
       // Local development with Prisma
       const db = getDb()
+      
+      const where: { activo?: boolean } = {}
+      if (!includeDeleted) {
+        where.activo = true
+      } else if (onlyDeleted) {
+        where.activo = false
+      }
+      
       const profesores = await db.profesor.findMany({
+        where,
         orderBy: { id: 'asc' },
         include: {
           asignatura: true
@@ -37,12 +51,16 @@ export async function GET(request: NextRequest) {
     }
     
     // Turso production
-    const result = await client.execute(`
-      SELECT p.*, a.nombre as asignaturaNombre, a.codigo as asignaturaCodigo
+    let sql = `SELECT p.*, a.nombre as asignaturaNombre, a.codigo as asignaturaCodigo
       FROM profesores p
-      LEFT JOIN asignaturas a ON p.asignaturaId = a.id
-      ORDER BY p.id ASC
-    `)
+      LEFT JOIN asignaturas a ON p.asignaturaId = a.id`
+    
+    if (!includeDeleted) {
+      sql += ' WHERE p.activo = 1'
+    } else if (onlyDeleted) {
+      sql += ' WHERE p.activo = 0'
+    }
+    sql += ' ORDER BY p.id ASC'
     
     return NextResponse.json(result.rows.map(row => ({
       ...row,
